@@ -1,1018 +1,394 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOKI168 - Live Chat</title>
+    <title>HOKI168 - Slot Gacor Pilihan</title>
+
+    <!-- Fonts & CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], pixel: ['Pixelify Sans', 'monospace'] },
+                    colors: { dark: '#050505', brand: { 400: '#4ADE80', 500: '#22c55e', 600: '#16a34a' } }
+                }
+            }
+        }
+    </script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1e0d3a 0%, #0f0518 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .chat-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
-            z-index: 9998;
-            transition: transform 0.3s;
-            animation: pulse 2s infinite;
-        }
-
-        .chat-button:hover {
-            transform: scale(1.1);
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
-            50% { box-shadow: 0 0 0 20px rgba(255, 215, 0, 0); }
-        }
-
-        .chat-button svg {
-            width: 30px;
-            height: 30px;
-            fill: #000;
-        }
-
-        .chat-window {
-            position: fixed;
-            bottom: 100px;
-            right: 30px;
-            width: 380px;
-            max-width: 90vw;
-            height: 600px;
-            max-height: 80vh;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 9999;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            padding: 20px;
-            color: #000;
-            position: relative;
-        }
-
-        .chat-header h3 {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-
-        .chat-header p {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        .close-chat {
-            background: rgba(0, 0, 0, 0.1);
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: #000;
-            transition: all 0.3s;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-
-        .close-chat:hover {
-            background: rgba(0, 0, 0, 0.2);
-            transform: scale(1.1);
-        }
-
-        .minimize-btn {
-            background: rgba(0, 0, 0, 0.1);
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            color: #000;
-            position: absolute;
-            top: 20px;
-            right: 60px;
-        }
-
-        .minimize-btn:hover {
-            background: rgba(0, 0, 0, 0.2);
-            transform: scale(1.1);
-        }
-
-        .minimize-btn svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .chat-header-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .online-indicator {
-            width: 10px;
-            height: 10px;
-            background: #00ff00;
-            border-radius: 50%;
-            border: 2px solid #FFD700;
-            animation: blink 2s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .chat-login {
-            padding: 30px 20px;
-            background: white;
-        }
-
-        .chat-login h4 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 16px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .form-group label span {
-            color: red;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-            transition: border 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #FFD700;
-        }
-
-        .btn-start {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border: none;
-            border-radius: 10px;
-            color: #000;
-            font-weight: bold;
-            font-size: 15px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .btn-start:hover {
-            transform: translateY(-2px);
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #f5f5f5;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .message.user {
-            align-items: flex-end;
-        }
-
-        .message.admin, .message.bot {
-            align-items: flex-start;
-        }
-
-        .message-bubble {
-            max-width: 80%;
-            padding: 12px 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            line-height: 1.6;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-        }
-
-        .message.user .message-bubble {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            color: #000;
-            border-bottom-right-radius: 5px;
-        }
-
-        .message.admin .message-bubble, .message.bot .message-bubble {
-            background: white;
-            color: #333;
-            border-bottom-left-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .message-bubble a {
-            color: #0066cc;
-            text-decoration: underline;
-            word-break: break-all;
-            font-weight: 500;
-        }
-
-        .message-bubble a:hover {
-            color: #0052a3;
-            text-decoration: none;
-        }
-
-        .message-time {
-            font-size: 11px;
-            color: #999;
-            margin-top: 5px;
-            padding: 0 5px;
-        }
-
-        .typing-indicator {
-            display: none;
-            padding: 10px 15px;
-            background: white;
-            border-radius: 15px;
-            border-bottom-left-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 15px;
-        }
-
-        .typing-indicator span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #999;
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: typing 1.4s infinite;
-        }
-
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-10px); }
-        }
-
-        .chat-input-container {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 14px;
-            resize: none;
-            max-height: 100px;
-        }
-
-        .chat-input:focus {
-            outline: none;
-            border-color: #FFD700;
-        }
-
-        .btn-send {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-
-        .btn-send:hover {
-            transform: scale(1.1);
-        }
-
-        .btn-send svg {
-            width: 20px;
-            height: 20px;
-            fill: #000;
-        }
-
-        .transfer-message {
-            background: #ffcc80 !important;
-            color: #000 !important;
-            font-weight: bold;
-        }
-
-        .rating-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(5px);
-        }
-
-        .rating-content {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            animation: slideUp 0.3s ease;
-        }
-
-        .rating-content h3 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 24px;
-        }
-
-        .rating-content p {
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
-
-        .rating-stars {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-
-        .star {
-            font-size: 40px;
-            cursor: pointer;
-            color: #ddd;
-            transition: color 0.2s, transform 0.2s;
-        }
-
-        .star:hover {
-            transform: scale(1.2);
-        }
-
-        .star.active {
-            color: #FFD700;
-        }
-
-        .rating-textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            resize: none;
-            font-size: 14px;
-        }
-
-        .rating-textarea:focus {
-            outline: none;
-            border-color: #FFD700;
-        }
-
-        .btn-submit-rating {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border: none;
-            border-radius: 10px;
-            color: #000;
-            font-weight: bold;
-            font-size: 15px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .btn-submit-rating:hover {
-            transform: translateY(-2px);
-        }
-
-        .chat-ended-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-
-        .chat-ended-message svg {
-            width: 80px;
-            height: 80px;
-            fill: #FFD700;
-            margin-bottom: 20px;
-        }
-
-        .chat-ended-message h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .btn-new-chat {
-            margin-top: 20px;
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border: none;
-            border-radius: 25px;
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .btn-new-chat:hover {
-            transform: scale(1.05);
-        }
-
-        /* Minimized State */
-        .chat-window.minimized {
-            height: auto;
-        }
-
-        .chat-window.minimized .chat-messages,
-        .chat-window.minimized .chat-login,
-        .chat-window.minimized .chat-input-container,
-        .chat-window.minimized .chat-ended-message {
-            display: none;
-        }
-
-        .chat-window.minimized .chat-header {
-            cursor: pointer;
-        }
-
-        /* Minimized Indicator */
-        .minimized-indicator {
-            position: fixed;
-            bottom: 100px;
-            right: 30px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            padding: 15px 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
-            display: none;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            z-index: 9998;
-            animation: slideUp 0.3s ease;
-        }
-
-        .minimized-indicator.show {
-            display: flex;
-        }
-
-        .minimized-indicator .online-indicator {
-            width: 8px;
-            height: 8px;
-        }
-
-        .minimized-indicator span {
-            color: #000;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .close-minimized {
-            background: rgba(0, 0, 0, 0.1);
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 16px;
-            line-height: 1;
-        }
-
-        .close-minimized:hover {
-            background: rgba(0, 0, 0, 0.2);
-        }
+        ::selection { background: rgba(34, 197, 94, 0.3); }
+        body { background-color: #050505; font-family: 'Inter', sans-serif; }
+
+        .bg-glow {
+            position: fixed; width: 100%; height: 100%; top: 0; left: 0;
+            background: radial-gradient(ellipse at 20% 20%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(74, 222, 128, 0.1) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .percentage-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.5); } 50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 30px rgba(34, 197, 94, 0.4); } }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .game-card { transition: all 0.3s ease; }
+        .game-card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.1); }
+        .game-card:hover .game-image { transform: scale(1.1); }
+        .play-overlay { opacity: 0; transition: opacity 0.3s ease; }
+        .game-card:hover .play-overlay { opacity: 1; }
+        @keyframes hot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .hot-badge { animation: hot-pulse 1s ease-in-out infinite; }
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        .filter-btn { transition: all 0.3s ease; }
+        .filter-btn.active { background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.5); color: #4ADE80; box-shadow: 0 0 15px rgba(34, 197, 94, 0.2); }
+        .game-image { transition: opacity 0.5s ease-in-out, transform 0.5s ease; }
+        .provider-section { margin-bottom: 3rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 2rem; }
+        .provider-section:last-child { border-bottom: none; }
     </style>
 </head>
-<body>
 
-    <div class="chat-button" onclick="toggleChat()">
-        <svg viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-    </div>
+<body class="min-h-screen text-white">
 
-    <div class="chat-window" id="chatWindow">
-        <div class="chat-header">
-            <button class="minimize-btn" onclick="minimizeChat()" title="Minimize">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 13H5v-2h14v2z"/>
-                </svg>
-            </button>
-            <button class="close-chat" onclick="endChat()" title="Akhiri Percakapan">×</button>
-            <div class="chat-header-info">
-                <div class="online-indicator"></div>
-                <div>
-                    <h3>HOKI168 Support</h3>
-                    <p id="chatStatus">Online - Biasanya membalas dalam hitungan menit</p>
+     <!-- FLOATING WIDGET (Logo di posisi panah merah) -->
+    <div class="fixed left-4 top-1/2 -translate-y-1/2 z-50 hidden lg:block">
+        <a href="https://LOGINSAJA.WEBSITE/HOKI168/" target="_blank" class="block">
+            <div class="relative animate-bounce">
+                <img src="hoki168.png" alt="HOKI168" class="w-20 h-auto rounded-xl shadow-2xl shadow-brand-500/30 border-2 border-brand-500/50">
+                <div class="mt-2 bg-brand-600/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center shadow-lg">
+                    <p class="text-[10px] font-bold text-white tracking-tight">Situs Slot</p>
+                    <p class="text-[10px] font-bold text-white tracking-tight">Gacor Terpercaya</p>
                 </div>
             </div>
-        </div>
-
-        <div class="chat-login" id="chatLogin">
-            <h4>Selamat datang di live chat HOKI168</h4>
-            <div class="form-group">
-                <label>Username / ID : <span>*</span></label>
-                <input type="text" id="usernameInput" placeholder="Masukkan Username / ID">
-            </div>
-            <button class="btn-start" onclick="startChat()">Mulai Percakapan</button>
-        </div>
-
-        <div class="chat-messages" id="chatMessages" style="display: none;">
-            <div class="typing-indicator" id="typingIndicator">
-                <span></span><span></span><span></span>
-            </div>
-        </div>
-
-        <div class="chat-input-container" id="chatInput" style="display: none;">
-            <textarea class="chat-input" id="messageInput" placeholder="Ketik pesan..." rows="1"></textarea>
-            <button class="btn-send" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                </svg>
-            </button>
-        </div>
-
-        <div class="chat-ended-message" id="chatEnded" style="display: none;">
-            <svg viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-            </svg>
-            <h3>Percakapan Berakhir</h3>
-            <p>Terima kasih telah menghubungi kami</p>
-            <button class="btn-new-chat" onclick="startNewChat()">Chat Baru</button>
-        </div>
+        </a>
     </div>
 
-    <!-- Minimized Indicator -->
-    <div class="minimized-indicator" id="minimizedIndicator" onclick="minimizeChat()">
-        <div class="online-indicator"></div>
-        <span>HOKI168 Support</span>
-        <button class="close-minimized" onclick="event.stopPropagation(); minimizeChat()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 13H5v-2h14v2z"/>
-            </svg>
-        </button>
-    </div>
+    <div class="bg-glow"></div>
 
-    <div class="rating-modal" id="ratingModal">
-        <div class="rating-content">
-            <h3>Bagaimana pelayanan kami?</h3>
-            <p>Beri penilaian untuk membantu kami meningkatkan layanan</p>
-            <div class="rating-stars" id="ratingStars">
-                <span class="star" onclick="setRating(1)">★</span>
-                <span class="star" onclick="setRating(2)">★</span>
-                <span class="star" onclick="setRating(3)">★</span>
-                <span class="star" onclick="setRating(4)">★</span>
-                <span class="star" onclick="setRating(5)">★</span>
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 backdrop-blur-xl bg-dark/80 border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <!-- LOGO HEADER -->
+                        <img src="hoki168.png" alt="HOKI168 Logo" class="h-12 w-auto object-contain">
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                        <iconify-icon icon="solar:refresh-linear" class="text-brand-400"></iconify-icon>
+                        <!-- Update teks countdown -->
+                        <span class="text-sm text-gray-300">Update: <span id="countdown-timer" class="text-brand-400 font-medium">00:20</span></span>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 rounded-xl bg-gradient-to-r from-brand-500/20 via-brand-400/10 to-brand-500/20 border border-brand-500/30 text-center">
+                    <p class="font-family text-lg text-brand-400">🔥 RUTE GACOR HARI INI 🔥</p>
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="mt-4 flex items-center justify-center gap-3 flex-wrap">
+                    <button onclick="setFilter('all')" class="filter-btn active px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:border-brand-500/50 focus:outline-none" data-provider="all">Semua</button>
+                    <button onclick="setFilter('Pragmatic Play')" class="filter-btn px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:border-brand-500/50 focus:outline-none" data-provider="Pragmatic Play">PRAGMATIC</button>
+                    <button onclick="setFilter('PG Soft')" class="filter-btn px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:border-brand-500/50 focus:outline-none" data-provider="PG Soft">PG SOFT</button>
+                    <button onclick="setFilter('No Limit City')" class="filter-btn px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:border-brand-500/50 focus:outline-none" data-provider="No Limit City">NOLIMIT</button>
+                    <button onclick="setFilter('Hacksaw Gaming')" class="filter-btn px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:border-brand-500/50 focus:outline-none" data-provider="Hacksaw Gaming">HACKSAW</button>
+                </div>
             </div>
-            <textarea class="rating-textarea" id="ratingFeedback" placeholder="Tambahkan komentar (opsional)" rows="3"></textarea>
-            <button class="btn-submit-rating" onclick="submitRating()">Kirim Penilaian</button>
-        </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
+            <div id="main-container"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="sticky bottom-0 z-50 backdrop-blur-xl bg-dark/90 border-t border-white/10">
+            <div class="max-w-7xl mx-auto px-4 py-3">
+                <div class="flex items-center justify-center gap-4">
+                    <a href="https://LOGINSAJA.WEBSITE/HOKI168/" class="flex-1 max-w-xs flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-white/5 border border-white/20 hover:bg-white/10 hover:border-brand-500/50 transition-all">
+                        <iconify-icon icon="solar:chat-round-dots-linear" class="text-xl text-brand-400"></iconify-icon>
+                        <span class="font-medium">Hubungi Kami</span>
+                    </a>
+                    <a href="https://LOGINSAJA.WEBSITE/HOKI168/" class="flex-1 max-w-xs flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 transition-all shadow-lg shadow-brand-500/30">
+                        <iconify-icon icon="solar:user-plus-linear" class="text-xl"></iconify-icon>
+                        <span class="font-medium">Daftar Sekarang</span>
+                    </a>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script>
-        let currentUser = '';
-        let chatId = '';
-        let currentRating = 0;
-        let chatEnded = false;
-        let isMinimized = false;
+        // ==========================================
+        // KONFIGURASI
+        // ==========================================
+        const SHOW_COUNT = 6;
+        
+        // DIUBAH MENJADI 20 DETIK (20.000 ms)
+        const ROTATION_INTERVAL_MS = 20000; 
+        
+        const PLAY_LINK = "https://LOGINSAJA.WEBSITE/HOKI168/";
 
-        function toggleChat() {
-            const chatWindow = document.getElementById('chatWindow');
-            if (chatWindow.style.display === 'flex') {
-                chatWindow.style.display = 'none';
-            } else {
-                chatWindow.style.display = 'flex';
-                if (currentUser && !chatEnded) {
-                    loadMessages();
-                }
-            }
+        // DATA POOL
+        const pragmaticPool = [
+            { name: "Gates of Olympus 1000", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20olympx.jpg?v=20250528" },
+            { name: "Starlight Princess™ 1000", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20starlightx.jpg?v=20250528" },
+            { name: "Gates of Olympus Super Scatter", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20olympgold.jpg?v=20250528" },
+            { name: "Mahjong Wins 3 Black Scatter", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswaysmahwblck.jpg?v=20250528" },
+            { name: "Sugar Rush Super Scatter", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20sugrushss.jpg?v=20250528" },
+            { name: "Wisdom of Athena", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20procount.jpg?v=20250528" },
+            { name: "Sweet Bonanza 1000", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20fruitswx.jpg?v=20250528" },
+            { name: "Mummy's Jewels 100", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswaysmjwl2.jpg?v=20250528" },
+            { name: "Wisdom of Athena 1000", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20procountx.jpg?v=20250528" },
+            { name: "Sweet Rush Bonanza", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20swrbon.jpg?v=20250528" },
+            { name: "Rujak Bonanza", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20rujakbnz.jpg?v=20250528" },
+            { name: "Bonanza Gold", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20bonzgold.jpg?v=20250528" },
+            { name: "Starlight Archer 1000", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20stararx.jpg?v=20250528" },
+            { name: "5 Lions Megaways", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswayslions.jpg?v=20250528" },
+            { name: "Wild West Gold Blazing Bounty", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20wwgcluster.jpg?v=20250528" },
+            { name: "Hammerstorm", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs40hmrstrm.jpg?v=20250528" },
+            { name: "Wheel of Happiness", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswayswildeq.jpg?v=20250528" },
+            { name: "Sweet Craze", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20chestcol.jpg?v=20250528" },
+            { name: "Super Gummy Strike", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs5supergummy.jpg?v=20250528" },
+            { name: "Gates of Hades", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20gtsofhades.jpg?v=20250528" },
+            { name: "Gates of Olympus 1000 Dice", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20dicegatex.jpg?v=20250528" },
+            { name: "Bounty Hunter", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20bhunter.jpg?v=20250528" },
+            { name: "Zombie School Megaways", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswayspompmr2.jpg?v=20250528" },
+            { name: "The Dog House Royal Hunt", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20dhsuper.jpg?v=20250528" },
+            { name: "Ancient Island Megaways", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswaysmodfr.jpg?v=20250528" },
+            { name: "Might of Ra", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs50mightra.jpg?v=20250528" },
+            { name: "Fruit Party 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20fparty2.jpg?v=20250528" },
+            { name: "Mysterious Egypt", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs10wildtut.jpg?v=20250528" },
+            { name: "Fury of Odin Megaways", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswaysfuryodin.jpg?v=20250528" },
+            { name: "Aztec Gems Deluxe™", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs9aztecgemsdx.jpg?v=20250528" },
+            { name: "Madame Destiny Megaways", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vswaysmadame.jpg?v=20250528" },
+            { name: "Bow of Artemis", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PP/vs20gembondx.jpg?v=20250528" }
+        ];
+
+        const pgsoftPool = [
+            { name: "Mahjong Ways", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_65.jpg?v=20250528" },
+            { name: "Mahjong Ways 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_74.jpg?v=20250528" },
+            { name: "Treasures of Aztec", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_87.jpg?v=20250528" },
+            { name: "Ways of the Qilin", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_106.jpg?v=20250528" },
+            { name: "Wild Bandito", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_104.jpg?v=20250528" },
+            { name: "Lucky Neko", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_89.jpg?v=20250528" },
+            { name: "Gemstones Gold", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1671262.jpg?v=20250528" },
+            { name: "Cocktail Nights", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_117.jpg?v=20250528" },
+            { name: "Pinata Wins", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1492288.jpg?v=20250528" },
+            { name: "Ganesha Fortune", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_75.jpg?v=20250528" },
+            { name: "Anubis Wrath", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1623475.jpg?v=20250528" },
+            { name: "Dreams of Macau", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_79.jpg?v=20250528" },
+            { name: "The Great Icescape", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_53.jpg?v=20250528" },
+            { name: "Garuda Gems", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_122.jpg?v=20250528" },
+            { name: "Lucky Piggy", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_130.jpg?v=20250528" },
+            { name: "Legend of Perseus", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_128.jpg?v=20250528" },
+            { name: "Fortune Ox", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_98.jpg?v=20250528" },
+            { name: "Songkran Splash", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1448762.jpg?v=20250528" },
+            { name: "Werewolf's Hunt", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1615454.jpg?v=20250528" },
+            { name: "Three Crazy Piggies", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1727711.jpg?v=20250528" },
+            { name: "Alibaba's Cave of Fortune", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1940257.jpg?v=20250528" },
+            { name: "Midas Fortune", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1402846.jpg?v=20250528" },
+            { name: "Wild Ape ", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1508783.jpg?v=20250528" },
+            { name: "Dragon Hatch", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_57.jpg?v=20250528" },
+            { name: "Asgardian Rising", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1340277.jpg?v=20250528" },
+            { name: "Queen of Bounty", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_84.jpg?v=20250528" },
+            { name: "Mythical Guardians", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1849515.jpg?v=20250528" },
+            { name: "Gem Saviour Conquest", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_62.jpg?v=20250528" },
+            { name: "Fruity Candy", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/PGSOFT/PGSOFT_1397455.jpg?v=20250528" },
+        ];
+        const nolimitPool = [
+            { name: "Dead, Dead, or Deader", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/deaddeadordeader.jpg?v=20250528" },
+            { name: "Tombstone No Mercy", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/tombstonenomercy.jpg?v=20250528" },
+            { name: "Warrior Graveyard xNudge", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/warriorgraveyard.jpg?v=20250528" },
+            { name: "Apocalypse Super xNudge", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/apocalypse000000.jpg?v=20250528" },
+            { name: "Bangkok Hilton", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/bangkokhilton000.jpg?v=20250528" },
+            { name: "Disturbed", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/disturbed0000000.jpg?v=20250528" },
+            { name: "Deadwood R.I.P", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/deadwoodrip00000.jpg?v=20250528" },
+            { name: "Duck Hunters", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/duckhunters00000.jpg?v=20250528" },
+            { name: "Fire in the Hole 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/fireinthehole200.jpg?v=20250528" },
+            { name: "El Pasa Gunfight xNudge", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/elpaso0000000000.jpg?v=20250528" },
+            { name: "Evil Goblins xBomb", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/evilgoblins00000.jpg?v=20250528" },
+            { name: "Folsom Prison", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/folsomprison0000.jpg?v=20250528g" },
+            { name: "Golden Genie And The Walking Wilds", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/goldengenie00000.jpg?v=20250528" },
+            { name: "Harlequin Carnival", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/harlequin0000000.jpg?v=20250528" },
+            { name: "Kill Em All", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/killemall0000000.jpg?v=20250528" },
+            { name: "Mental 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/mental2000000000.jpg?v=20250528" },
+            { name: "Pearl Harbor", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/pearlharbor00000.jpg?v=20250528" },
+            { name: "Possessed", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/possessed0000000.jpg?v=20250528" },
+            { name: "Roadkill", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/roadkill00000000.jpg?v=20250528" },
+            { name: "Space Donkey", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/spacedonkey00000.jpg?v=20250528" },
+            { name: "Nexus The Crypt", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/thecr_xb_nexus_0.jpg?v=20250528" },
+            { name: "The Creepy Carnival", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/thecreepyarnival.jpg?v=20250528" },
+            { name: "Tesla Jolt", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/teslajolt0000000.jpg?v=20250528" },
+            { name: "Tombstone RIP", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/tombstonerip0000.jpg?v=20250528" },
+            { name: "Monkey's Gold xPays", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/monkeysgold00000.jpg?v=20250528" },
+            { name: "Ice Ice Yeti", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/iceiceyeti000000.jpg?v=20250528" },
+            { name: "Blood & Shadow 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/bloodandshadow20.jpg?v=20250528" },
+            { name: "Devil's Crossroad", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/devilscrossroad0.jpg?v=20250528" },
+            { name: "Dead Men Walking", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/deadmenwalking00.jpg?v=20250528" },
+            { name: "Gaelic Gold", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/gaelicgold000000.jpg?v=20250528" },
+            { name: "Kenneth Must Die", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/NOLIMITCITY/kennethmustdie00.jpg?v=20250528" },
+
+        ];
+
+        const hacksawPool = [
+            { name: "BASH BROS", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1928.jpg?v=20250528" },
+            { name: "THE COUNT", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1803.jpg?v=20250528" },
+            { name: "Invictus", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1791.jpg?v=20250528" },
+            { name: "Ze Zeus", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1508.jpg?v=20250528" },
+            { name: "PRAY FOR SIX", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_2115.jpg?v=20250528" },
+            { name: "Spinman", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1748.jpg?v=20250528" },
+            { name: "CHAOS CREW 3", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1867.jpg?v=20250528" },
+            { name: "Reign of Rome", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1728.jpg?v=20250528" },
+            { name: "Rad Maxx", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1732.jpg?v=20250528" },
+            { name: "Wanted Dead or a Wild", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1067.jpg?v=20250528" },
+            { name: "Cash Crew", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1456.jpg?v=20250528" },
+            { name: "RIP City", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1233.jpg?v=20250528" },
+            { name: "Hand of Anubis", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1164.jpg?v=20250528" },
+            { name: "Keep 'em", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1494.jpg?v=20250528" },
+            { name: "Pray for Three", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1736.jpg?v=20250528" },
+            { name: "Chaos Crew 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1352.jpg?v=20250528" },
+            { name: "Rotten", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1209.jpg?v=20250528" },
+            { name: "Bloodthirst", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1251.jpg?v=20250528" },
+            { name: "Cubes 2", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1069.jpg?v=20250528" },
+            { name: "Orb of Destiny", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1474.jpg?v=20250528" },
+            { name: "Stack'em", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1084.jpg?v=20250528" },
+            { name: "Le Pharaoh", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1562.jpg?v=20250528" },
+            { name: "Dark Summoning", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1392.jpg?v=20250528" },
+            { name: "Drop'em", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1314.jpg?v=20250528" },
+            { name: "Outlasw Inc", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1083.jpg?v=20250528" },
+            { name: "Limbo", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1626.jpg?v=20250528" },
+            { name: "Frank's Farm", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1225.jpg?v=20250528" },
+            { name: "ITERO", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1168.jpg?v=20250528" },
+            { name: "Duel at Dawn", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1620.jpg?v=20250528" },
+            { name: "Evil Eyes", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1570.jpg?v=20250528" },
+            { name: "SixSixSix", image: "https://d2rzzcn1jnr24x.cloudfront.net/Images/providers/HACKSAW/HACKSAW_1534.jpg?v=20250528" }
+        ];
+
+        // State
+        const providersData = { 'Pragmatic Play': pragmaticPool, 'PG Soft': pgsoftPool, 'No Limit City': nolimitPool, 'Hacksaw Gaming': hacksawPool };
+        const batchIndices = { 'Pragmatic Play': 0, 'PG Soft': 0, 'No Limit City': 0, 'Hacksaw Gaming': 0 };
+        let currentFilter = 'all';
+        let countdownTime = ROTATION_INTERVAL_MS;
+
+        // Functions
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) { randomIndex = Math.floor(Math.random() * currentIndex); currentIndex--; [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]; }
+            return array;
+        }
+        const getRandomPercentage = () => Math.floor(Math.random() * 60) + 35;
+        const getRandomHot = () => Math.random() > 0.7;
+
+        function setFilter(provider) {
+            currentFilter = provider;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.provider === provider));
+            renderContent();
         }
 
-        function minimizeChat() {
-            const chatWindow = document.getElementById('chatWindow');
-            const minimizedIndicator = document.getElementById('minimizedIndicator');
-            
-            isMinimized = !isMinimized;
-            
-            if (isMinimized) {
-                chatWindow.classList.add('minimized');
-                minimizedIndicator.classList.add('show');
-            } else {
-                chatWindow.classList.remove('minimized');
-                minimizedIndicator.classList.remove('show');
-            }
-        }
+        function renderContent() {
+            const container = document.getElementById('main-container');
+            container.innerHTML = '';
+            const providersToShow = currentFilter === 'all' ? Object.keys(providersData) : [currentFilter];
 
-        function startChat() {
-            const username = document.getElementById('usernameInput').value.trim();
-            if (!username) {
-                alert('Silakan masukkan username/ID!');
-                return;
-            }
+            providersToShow.forEach(providerName => {
+                const pool = providersData[providerName];
+                const currentIndex = batchIndices[providerName];
+                let batch = pool.slice(currentIndex, currentIndex + SHOW_COUNT);
+                if (batch.length < SHOW_COUNT) { batch = [...batch, ...pool.slice(0, SHOW_COUNT - batch.length)]; }
+                batch = shuffleArray([...batch]); // Acak gambar
 
-            currentUser = username;
-            chatId = 'chat_' + Date.now();
-            chatEnded = false;
-            
-            localStorage.setItem('currentUser', currentUser);
-            localStorage.setItem('currentChatId', chatId);
-            localStorage.setItem('chatEnded_' + chatId, 'false');
+                const section = document.createElement('div');
+                section.className = 'provider-section reveal active';
+                const batchNum = Math.floor(currentIndex / SHOW_COUNT) + 1;
 
-            document.getElementById('chatLogin').style.display = 'none';
-            document.getElementById('chatMessages').style.display = 'block';
-            document.getElementById('chatInput').style.display = 'flex';
-            document.getElementById('chatEnded').style.display = 'none';
-            document.getElementById('chatStatus').textContent = 'Online - Biasanya membalas dalam hitungan menit';
+                section.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold flex items-center gap-2">
+                            <iconify-icon icon="solar:gamepad-linear" class="text-brand-400"></iconify-icon>
+                            ${providerName}
+                        </h2>
+                        <span class="text-xs px-2 py-1 rounded bg-white/10 text-gray-400">Batch ${batchNum}</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4" id="grid-${providerName.replace(/\s/g, '')}"></div>
+                `;
+                container.appendChild(section);
 
-            const welcomeMsg = {
-                chatId: chatId,
-                user: 'Bot',
-                message: 'Selamat datang di HOKI168, apakah ada yang bisa saya bantu? ☺️',
-                type: 'bot',
-                time: new Date().toLocaleString('id-ID'),
-                timestamp: Date.now()
-            };
+                const grid = document.getElementById(`grid-${providerName.replace(/\s/g, '')}`);
+                batch.forEach(game => {
+                    const percentage = getRandomPercentage();
+                    const pColor = percentage >= 80 ? 'bg-brand-500' : percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+                    const tColor = percentage >= 80 ? 'text-brand-400' : percentage >= 60 ? 'text-yellow-400' : 'text-red-400';
+                    const isHot = getRandomHot();
 
-            let messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            messages.push(welcomeMsg);
-            localStorage.setItem('chat_messages', JSON.stringify(messages));
-
-            loadMessages();
-            setInterval(loadMessages, 2000);
-        }
-
-        function sendMessage() {
-            if (chatEnded) {
-                alert('Percakapan sudah berakhir. Silakan mulai chat baru.');
-                return;
-            }
-
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (!message) return;
-
-            const msgData = {
-                chatId: chatId,
-                user: currentUser,
-                message: message,
-                type: 'user',
-                time: new Date().toLocaleString('id-ID'),
-                timestamp: Date.now()
-            };
-
-            let messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            messages.push(msgData);
-            localStorage.setItem('chat_messages', JSON.stringify(messages));
-
-            input.value = '';
-            loadMessages();
-            setTimeout(() => checkBotResponse(message), 1000);
-        }
-
-        function checkBotResponse(userMessage) {
-            if (chatEnded) return;
-
-            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            const chatMessages = messages.filter(m => m.chatId === chatId);
-            const adminReplied = chatMessages.some(m => m.type === 'admin');
-            
-            if (adminReplied) {
-                return;
-            }
-
-            const botSettings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
-            const isEnabled = botSettings.enabled || false;
-            
-            if (!isEnabled) return;
-
-            const keywords = botSettings.keywords || [];
-            let response = null;
-            let bestMatchLength = 0;
-            
-            const userMessageLower = userMessage.toLowerCase().trim();
-
-            for (let kwGroup of keywords) {
-                if (kwGroup.keywords && Array.isArray(kwGroup.keywords)) {
-                    for (let keyword of kwGroup.keywords) {
-                        const keywordLower = keyword.toLowerCase().trim();
-                        
-                        if (userMessageLower.includes(keywordLower)) {
-                            if (keywordLower.length > bestMatchLength) {
-                                bestMatchLength = keywordLower.length;
-                                response = kwGroup.response;
-                            }
-                        }
-                    }
-                } else if (kwGroup.keyword && userMessageLower.includes(kwGroup.keyword.toLowerCase())) {
-                    if (!response) {
-                        response = kwGroup.response;
-                    }
-                }
-            }
-
-            if (!response) {
-                const transferEnabled = botSettings.transferToAdmin || false;
-                
-                if (transferEnabled) {
-                    const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
-                    
-                    if (!transferStatus[chatId]) {
-                        response = "Sistem sedang menghubungkan Anda dengan admin. Silakan tunggu sebentar...";
-                        
-                        transferStatus[chatId] = true;
-                        localStorage.setItem('chat_transfer_status', JSON.stringify(transferStatus));
-                        
-                        localStorage.setItem('newAdminChat', JSON.stringify({
-                            chatId: chatId,
-                            user: currentUser,
-                            timestamp: Date.now()
-                        }));
-                    } else {
-                        if (botSettings.defaultResponse) {
-                            response = botSettings.defaultResponse;
-                        }
-                    }
-                } else if (botSettings.defaultResponse) {
-                    response = botSettings.defaultResponse;
-                }
-            }
-
-            if (response) {
-                showTyping();
-                setTimeout(() => {
-                    const botMsg = {
-                        chatId: chatId,
-                        user: 'Bot',
-                        message: response,
-                        type: 'bot',
-                        time: new Date().toLocaleString('id-ID'),
-                        timestamp: Date.now()
-                    };
-
-                    let messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-                    messages.push(botMsg);
-                    localStorage.setItem('chat_messages', JSON.stringify(messages));
-                    
-                    hideTyping();
-                    loadMessages();
-                }, 1000);
-            }
-        }
-
-        function showTyping() {
-            document.getElementById('typingIndicator').style.display = 'block';
-            const messagesDiv = document.getElementById('chatMessages');
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        function hideTyping() {
-            document.getElementById('typingIndicator').style.display = 'none';
-        }
-
-        function convertUrlToLink(text) {
-            if (!text) return '';
-            
-            const lines = text.split('\n');
-            
-            const processedLines = lines.map(line => {
-                const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
-                return line.replace(urlRegex, function(url) {
-                    return `<a href="${url}" target="_blank" style="color: #0066cc; text-decoration: underline; word-break: break-all; display: inline-block; margin: 2px 0;">${url}</a>`;
+                    const card = document.createElement('div');
+                    card.className = `game-card rounded-2xl bg-white/5 border border-white/10 overflow-hidden cursor-pointer ${isHot ? 'pulse-glow' : ''}`;
+                    card.innerHTML = `
+                        <div class="relative overflow-hidden">
+                            <img src="${game.image}" alt="${game.name}" class="game-image w-full aspect-square object-cover transition-transform duration-500">
+                            <div class="play-overlay absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                                <a href="${PLAY_LINK}" target="_blank" class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold text-xs shadow-lg transform hover:scale-105 transition-all flex items-center gap-2">
+                                    <iconify-icon icon="solar:play-bold" class="text-base"></iconify-icon>BERMAIN
+                                </a>
+                            </div>
+                            ${isHot ? `<div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-orange-500/90 text-xs font-medium hot-badge flex items-center gap-1 z-20"><iconify-icon icon="solar:fire-bold"></iconify-icon>HOT</div>` : ''}
+                            ${percentage >= 85 ? `<div class="absolute top-2 left-2 px-2 py-1 rounded-full bg-brand-500/90 text-xs font-medium flex items-center gap-1 z-20"><iconify-icon icon="solar:star-bold"></iconify-icon>GACOR</div>` : ''}
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate">${game.name}</h3>
+                            <p class="text-xs text-gray-500 mb-2">${providerName}</p>
+                            <div class="space-y-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400">Win Rate</span>
+                                    <span class="font-pixel font-bold ${tColor}">${percentage}%</span>
+                                </div>
+                                <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                    <div class="percentage-bar h-full rounded-full ${pColor}" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
                 });
             });
-            
-            return processedLines.join('<br>');
         }
 
-        function loadMessages() {
-            if (chatEnded) return;
+        function rotateBatches() {
+            for (let name in providersData) {
+                let idx = batchIndices[name] + SHOW_COUNT;
+                if (idx >= providersData[name].length) idx = 0;
+                batchIndices[name] = idx;
+            }
+            renderContent();
+            countdownTime = ROTATION_INTERVAL_MS;
+        }
 
-            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            const chatMessages = messages.filter(m => m.chatId === chatId);
+        function updateCountdown() {
+            if (countdownTime <= 0) rotateBatches();
+            else countdownTime -= 1000;
+
+            // Format M:SS atau SS
+            const minutes = Math.floor(countdownTime / (1000 * 60));
+            const seconds = Math.floor((countdownTime % (1000 * 60)) / 1000);
             
-            const container = document.getElementById('chatMessages');
-            const typingIndicator = document.getElementById('typingIndicator');
-            
-            Array.from(container.children).forEach(child => {
-                if (!child.classList.contains('typing-indicator')) {
-                    container.removeChild(child);
-                }
-            });
-
-            chatMessages.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'message ' + msg.type;
-                
-                const bubbleClass = msg.type === 'bot' && msg.message.includes('menghubungkan') ? 'transfer-message' : '';
-                
-                const messageWithLinks = convertUrlToLink(msg.message);
-                
-                msgDiv.innerHTML = `
-                    <div class="message-bubble ${bubbleClass}">${messageWithLinks}</div>
-                    <div class="message-time">${msg.time}</div>
-                `;
-                container.insertBefore(msgDiv, typingIndicator);
-            });
-
-            container.scrollTop = container.scrollHeight;
-
-            const adminReplied = chatMessages.some(m => m.type === 'admin');
-            if (adminReplied) {
-                document.getElementById('chatStatus').textContent = 'Admin sedang membalas...';
+            // Jika 0 menit, tampilkan saja detik
+            if (minutes > 0) {
+                 document.getElementById('countdown-timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                 document.getElementById('countdown-timer').textContent = `${seconds.toString().padStart(2, '0')}s`;
             }
         }
 
-        function endChat() {
-            if (chatEnded) {
-                toggleChat();
-                return;
-            }
-
-            if (confirm('Akhiri percakapan ini?')) {
-                document.getElementById('ratingModal').style.display = 'flex';
-            }
-        }
-
-        function setRating(stars) {
-            currentRating = stars;
-            const starElements = document.querySelectorAll('.star');
-            starElements.forEach((star, index) => {
-                if (index < stars) {
-                    star.classList.add('active');
-                } else {
-                    star.classList.remove('active');
-                }
-            });
-        }
-
-        function submitRating() {
-            if (currentRating === 0) {
-                alert('Silakan beri penilaian bintang!');
-                return;
-            }
-
-            const feedback = document.getElementById('ratingFeedback').value.trim();
-            
-            const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
-            ratings.push({
-                chatId: chatId,
-                user: currentUser,
-                rating: currentRating,
-                feedback: feedback,
-                time: new Date().toLocaleString('id-ID'),
-                timestamp: Date.now()
-            });
-            localStorage.setItem('chat_ratings', JSON.stringify(ratings));
-
-            chatEnded = true;
-            localStorage.setItem('chatEnded_' + chatId, 'true');
-
-            document.getElementById('ratingModal').style.display = 'none';
-            document.getElementById('chatMessages').style.display = 'none';
-            document.getElementById('chatInput').style.display = 'none';
-            document.getElementById('chatEnded').style.display = 'block';
-            document.getElementById('chatStatus').textContent = 'Percakapan berakhir';
-
-            alert('Terima kasih atas penilaian Anda!');
-        }
-
-        function startNewChat() {
-            currentUser = '';
-            chatId = '';
-            chatEnded = false;
-            currentRating = 0;
-            isMinimized = false;
-            
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('currentChatId');
-            
-            document.getElementById('chatLogin').style.display = 'block';
-            document.getElementById('chatMessages').style.display = 'none';
-            document.getElementById('chatInput').style.display = 'none';
-            document.getElementById('chatEnded').style.display = 'none';
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('chatStatus').textContent = 'Online - Biasanya membalas dalam hitungan menit';
-            document.getElementById('minimizedIndicator').classList.remove('show');
-        }
-
-        window.onload = function() {
-            const savedUser = localStorage.getItem('currentUser');
-            const savedChatId = localStorage.getItem('currentChatId');
-            if (savedUser && savedChatId) {
-                currentUser = savedUser;
-                chatId = savedChatId;
-                chatEnded = localStorage.getItem('chatEnded_' + chatId) === 'true';
-                
-                if (chatEnded) {
-                    document.getElementById('chatLogin').style.display = 'none';
-                    document.getElementById('chatMessages').style.display = 'none';
-                    document.getElementById('chatInput').style.display = 'none';
-                    document.getElementById('chatEnded').style.display = 'block';
-                    document.getElementById('chatStatus').textContent = 'Percakapan berakhir';
-                } else {
-                    document.getElementById('chatLogin').style.display = 'none';
-                    document.getElementById('chatMessages').style.display = 'block';
-                    document.getElementById('chatInput').style.display = 'flex';
-                    loadMessages();
-                    setInterval(loadMessages, 2000);
-                }
-            }
-        };
-
-        document.getElementById('messageInput')?.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-            else if (e.key === 'Enter' && e.ctrlKey) {
-                e.preventDefault();
-                const start = this.selectionStart;
-                const end = this.selectionEnd;
-                this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
-                this.selectionStart = this.selectionEnd = start + 1;
-            }
-        });
-
-        // Click on header to restore when minimized
-        document.querySelector('.chat-header')?.addEventListener('click', function(e) {
-            if (isMinimized && !e.target.closest('.minimize-btn') && !e.target.closest('.close-chat')) {
-                minimizeChat();
-            }
-        });
+        renderContent();
+        setInterval(updateCountdown, 1000);
     </script>
 </body>
+
 </html>
