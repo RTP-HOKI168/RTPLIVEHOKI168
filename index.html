@@ -390,7 +390,7 @@
         setInterval(updateCountdown, 1000);
     </script>
 
-    <!-- HOKI168 Live Chat Widget -->
+  <!-- HOKI168 Live Chat Widget -->
 <div id="hoki168-chat-widget">
   <!-- Floating Chat Button -->
   <div id="chat-widget-button" onclick="toggleHokiChat()">
@@ -412,7 +412,6 @@
 </div>
 
 <style>
-/* Chat Widget Styles */
 #hoki168-chat-widget {
   position: fixed;
   bottom: 30px;
@@ -504,7 +503,6 @@
   border-radius: 20px;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   #chat-widget-container {
     width: 90vw;
@@ -521,7 +519,6 @@
 </style>
 
 <script>
-// Toggle Chat
 function toggleHokiChat() {
   var container = document.getElementById('chat-widget-container');
   var badge = document.getElementById('chat-notification-badge');
@@ -534,7 +531,6 @@ function toggleHokiChat() {
   }
 }
 
-// Close chat when clicking outside
 document.addEventListener('click', function(event) {
   var widget = document.getElementById('hoki168-chat-widget');
   var container = document.getElementById('chat-widget-container');
@@ -550,3 +546,4 @@ document.addEventListener('click', function(event) {
 
 
 </html>
+
