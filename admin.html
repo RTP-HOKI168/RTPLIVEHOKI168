@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
+ <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = { /* konfigurasi Anda */ };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Live Chat HOKI168</title>
@@ -832,513 +841,99 @@
 
     <script>
         let currentSelectedChat = null;
-        let botKeywords = [];
-        let pendingSoundInterval = null;
-        let isSoundPlaying = false;
-        
-        const soundIcon = document.getElementById('soundIcon');
-        const pendingSound = document.getElementById('pendingSound');
 
-        // Fungsi untuk memutar suara notifikasi
-        function playNotificationSound() {
-            if (!pendingSound) return;
-            
-            try {
-                pendingSound.currentTime = 0;
-                pendingSound.play();
-                isSoundPlaying = true;
-                if (soundIcon) soundIcon.classList.add('active');
-            } catch (e) {
-                console.log("Gagal memutar suara:", e);
-                isSoundPlaying = false;
-                if (soundIcon) soundIcon.classList.remove('active');
-            }
-        }
-        
-        // Fungsi untuk menghentikan suara
-        function stopNotificationSound() {
-            if (pendingSound) {
-                pendingSound.pause();
-                pendingSound.currentTime = 0;
-                isSoundPlaying = false;
-                if (soundIcon) soundIcon.classList.remove('active');
-            }
-        }
-        
-        // Fungsi untuk memicu suara notifikasi
-        function triggerPendingSound() {
-            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
-            
-            for (const chatId in transferStatus) {
-                if (transferStatus[chatId]) {
-                    const endedStatus = localStorage.getItem('chatEnded_' + chatId);
-                    if (endedStatus !== 'true') {
-                        playNotificationSound();
-                        return;
-                    }
-                }
-            }
-            
-            stopNotificationSound();
-        }
-        
-        // Fungsi untuk memulai loop suara (setiap 5 detik)
-        function startPendingSoundLoop() {
-            if (pendingSoundInterval) clearInterval(pendingSoundInterval);
-            
-            pendingSoundInterval = setInterval(() => {
-                triggerPendingSound();
-            }, 5000);
-        }
-        
-        // Fungsi untuk menghentikan loop suara
-        function stopPendingSoundLoop() {
-            if (pendingSoundInterval) {
-                clearInterval(pendingSoundInterval);
-                pendingSoundInterval = null;
-            }
-            stopNotificationSound();
-        }
-        
-        // Fungsi untuk toggle suara on/off
-        function toggleSound() {
-            if (isSoundPlaying) {
-                stopPendingSoundLoop();
-            } else {
-                startPendingSoundLoop();
-            }
-        }
+// ===== LOAD DAFTAR CHAT =====
+function loadChatList() {
+  db.ref('chats').on('value', (snapshot) => {
+    const chats = snapshot.val();
+    const chatListDiv = document.getElementById('chatList');
+    if (!chats) {
+      chatListDiv.innerHTML = '<p style="color:#888;">Belum ada percakapan</p>';
+      return;
+    }
 
-        window.onload = function() {
-            loadChatList();
-            startPendingSoundLoop();
-            setInterval(loadChatList, 3000);
-        };
+    const chatArray = Object.keys(chats).map(key => {
+      const chat = chats[key];
+      return {
+        chatId: key,
+        user: chat.user,
+        lastMessage: '...', // bisa diambil dari pesan terakhir
+        lastTime: new Date(chat.startedAt).toLocaleString('id-ID'),
+        isEnded: chat.isEnded || false,
+        isPendingAdmin: !chat.adminActive && !chat.isEnded
+      };
+    });
 
-        function loadChatList() {
-            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
-            const adminActiveChats = JSON.parse(localStorage.getItem('admin_active_chats') || '{}');
-            const chats = {};
+    // Urutkan: yang pending/aktif di atas, yang ended di bawah
+    chatArray.sort((a, b) => {
+      if (a.isEnded && !b.isEnded) return 1;
+      if (!a.isEnded && b.isEnded) return -1;
+      return 0;
+    });
 
-            messages.forEach(msg => {
-                if (!chats[msg.chatId]) {
-                    chats[msg.chatId] = {
-                        chatId: msg.chatId,
-                        user: msg.user,
-                        lastMessage: msg.message,
-                        lastTime: msg.time,
-                        timestamp: msg.timestamp,
-                        unread: 0,
-                        isPendingAdmin: false,
-                        isAdminActive: false,
-                        isEnded: false,
-                        endedAt: null
-                    };
-                } else {
-                    chats[msg.chatId].lastMessage = msg.message;
-                    chats[msg.chatId].lastTime = msg.time;
-                    chats[msg.chatId].timestamp = msg.timestamp;
-                }
+    chatListDiv.innerHTML = chatArray.map(chat => `
+      <div class="chat-item ${currentSelectedChat === chat.chatId ? 'active' : ''} ${chat.isPendingAdmin ? 'pending-admin' : ''} ${chat.isEnded ? 'chat-ended' : ''}" onclick="selectChat('${chat.chatId}')">
+        <div class="chat-item-header">
+          <span class="chat-item-user">${chat.user}</span>
+          <span class="chat-item-time">${chat.lastTime}</span>
+          ${chat.isEnded ? '<span class="ended-badge">ENDED</span>' : ''}
+          ${chat.isPendingAdmin ? '<span class="unread-badge">PENDING</span>' : ''}
+        </div>
+        <div class="chat-item-preview">${chat.lastMessage}</div>
+      </div>
+    `).join('');
+  });
+}
 
-                if (msg.type === 'admin') {
-                    chats[msg.chatId].isAdminActive = true;
-                }
-            });
+// ===== PILIH CHAT =====
+function selectChat(chatId) {
+  currentSelectedChat = chatId;
+  loadActiveChat(chatId);
+}
 
-            Object.keys(chats).forEach(chatId => {
-                const endedStatus = localStorage.getItem('chatEnded_' + chatId);
-                if (endedStatus === 'true') {
-                    chats[chatId].isEnded = true;
-                    const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
-                    const rating = ratings.find(r => r.chatId === chatId);
-                    if (rating) {
-                        chats[chatId].endedAt = rating.time;
-                    }
-                }
-            });
+// ===== LOAD PESAN CHAT TERPILIH =====
+function loadActiveChat(chatId) {
+  const messagesRef = db.ref('chats/' + chatId + '/messages');
+  messagesRef.off(); // bersihkan listener lama
+  messagesRef.on('child_added', (snapshot) => {
+    const msg = snapshot.val();
+    displayAdminMessage(msg);
+  });
 
-            Object.values(chats).forEach(chat => {
-                if (transferStatus[chat.chatId] && !chat.isAdminActive) {
-                    chat.isPendingAdmin = true;
-                }
-            });
+  // Tandai bahwa admin sedang aktif di chat ini
+  db.ref('chats/' + chatId).update({ adminActive: true });
+}
 
-            const totalChats = Object.keys(chats).length;
-            const activeChats = Object.values(chats).filter(c => !c.isEnded).length;
-            const endedChatsCount = Object.values(chats).filter(c => c.isEnded).length;
-            const pendingCount = Object.values(chats).filter(c => c.isPendingAdmin && !c.isEnded).length;
-            
-            document.getElementById('totalChats').textContent = totalChats;
-            document.getElementById('activeChats').textContent = activeChats;
-            document.getElementById('pendingChats').textContent = pendingCount;
-            document.getElementById('endedChats').textContent = endedChatsCount;
+// ===== KIRIM BALASAN ADMIN =====
+function sendAdminReply() {
+  const reply = document.getElementById('adminReply').value.trim();
+  if (!reply || !currentSelectedChat) return;
 
-            const chatListDiv = document.getElementById('chatList');
-            const chatArray = Object.values(chats).sort((a, b) => {
-                if (a.isEnded && !b.isEnded) return 1;
-                if (!a.isEnded && b.isEnded) return -1;
-                return b.timestamp - a.timestamp;
-            });
+  const msgData = {
+    user: 'Admin',
+    message: reply,
+    type: 'admin',
+    time: new Date().toLocaleString('id-ID'),
+    timestamp: firebase.database.ServerValue.TIMESTAMP
+  };
+  db.ref('chats/' + currentSelectedChat + '/messages').push(msgData);
+  document.getElementById('adminReply').value = '';
+}
 
-            if (chatArray.length === 0) {
-                chatListDiv.innerHTML = '<p style="color: #888; text-align: center; margin-top: 50px;">Belum ada percakapan</p>';
-                return;
-            }
+// ===== AKHIRI CHAT OLEH ADMIN =====
+function endChatByAdmin() {
+  if (!currentSelectedChat) return;
+  if (confirm('Yakin ingin mengakhiri percakapan ini?')) {
+    db.ref('chats/' + currentSelectedChat).update({ isEnded: true, endedAt: firebase.database.ServerValue.TIMESTAMP });
+    loadChatList();
+  }
+}
 
-            chatListDiv.innerHTML = chatArray.map(chat => `
-                <div class="chat-item ${currentSelectedChat === chat.chatId ? 'active' : ''} ${chat.isPendingAdmin ? 'pending-admin' : ''} ${chat.isEnded ? 'chat-ended' : ''}" 
-                     onclick="selectChat('${chat.chatId}', ${chat.isEnded})" style="cursor: pointer;">
-                    <div class="chat-item-header">
-                        <span class="chat-item-user">${chat.user}</span>
-                        <span class="chat-item-time">${chat.lastTime}</span>
-                        ${chat.isEnded ? '<span class="ended-badge">ENDED</span>' : ''}
-                        ${!chat.isEnded && chat.isPendingAdmin ? '<span class="unread-badge">PENDING</span>' : ''}
-                        ${!chat.isEnded && chat.isAdminActive ? '<span class="admin-active-badge">ADMIN</span>' : ''}
-                    </div>
-                    <div class="chat-item-preview">${chat.lastMessage}</div>
-                    ${chat.isEnded && chat.endedAt ? `<div class="ended-time">⏰ Berakhir: ${chat.endedAt}</div>` : ''}
-                </div>
-            `).join('');
-
-            triggerPendingSound();
-        }
-
-        function selectChat(chatId, isEndedChat = false) {
-            currentSelectedChat = chatId;
-            loadChatList();
-            loadActiveChat();
-            
-            stopPendingSoundLoop();
-            
-            if (isEndedChat) {
-                const textarea = document.getElementById('adminReply');
-                const btnSend = document.getElementById('btnSendAdmin');
-                const btnEnd = document.getElementById('btnEndChat');
-                
-                textarea.disabled = true;
-                textarea.placeholder = 'Chat sudah berakhir - Mode View Only';
-                btnSend.disabled = true;
-                btnEnd.disabled = true;
-                
-                document.getElementById('activeChatUser').innerHTML += ' <span class="view-only-badge">VIEW ONLY</span>';
-                return;
-            }
-            
-            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
-            if (transferStatus[chatId]) {
-                setTimeout(() => {
-                    if (confirm('Chat ini sedang menunggu admin. Ambil alih percakapan?')) {
-                        transferStatus[chatId] = false;
-                        localStorage.setItem('chat_transfer_status', JSON.stringify(transferStatus));
-                        
-                        const adminActiveChats = JSON.parse(localStorage.getItem('admin_active_chats') || '{}');
-                        adminActiveChats[chatId] = true;
-                        localStorage.setItem('admin_active_chats', JSON.stringify(adminActiveChats));
-                        
-                        loadChatList();
-                    }
-                }, 500);
-            }
-        }
-
-        function loadActiveChat() {
-            if (!currentSelectedChat) return;
-
-            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            const chatMessages = messages.filter(m => m.chatId === currentSelectedChat);
-            
-            if (chatMessages.length === 0) return;
-
-            document.getElementById('noChatSelected').style.display = 'none';
-            document.getElementById('activeChatContent').style.display = 'flex';
-            
-            const endedStatus = localStorage.getItem('chatEnded_' + currentSelectedChat);
-            const isEnded = endedStatus === 'true';
-            
-            const btnEnd = document.getElementById('btnEndChat');
-            
-            if (isEnded) {
-                document.getElementById('activeChatUser').innerHTML = `
-                    ${chatMessages[0].user} 
-                    <span class="ended-badge">ENDED</span>
-                    <span class="view-only-badge">VIEW ONLY</span>
-                `;
-                btnEnd.disabled = true;
-            } else {
-                document.getElementById('activeChatUser').textContent = chatMessages[0].user;
-                btnEnd.disabled = false;
-            }
-            
-            document.getElementById('activeChatTime').textContent = 'Terakhir aktif: ' + chatMessages[chatMessages.length - 1].time;
-
-            const messagesDiv = document.getElementById('activeChatMessages');
-            messagesDiv.innerHTML = '';
-            
-            if (isEnded) {
-                const noticeDiv = document.createElement('div');
-                noticeDiv.className = 'chat-ended-notice';
-                noticeDiv.innerHTML = '📋 Percakapan ini sudah diakhiri<br><small>Mode: View Only - Tidak dapat membalas</small>';
-                messagesDiv.appendChild(noticeDiv);
-            }
-
-            chatMessages.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'message ' + msg.type;
-                msgDiv.innerHTML = `
-                    <div class="message-bubble">${msg.message}</div>
-                    <div class="message-time">${msg.time}</div>
-                `;
-                messagesDiv.appendChild(msgDiv);
-            });
-
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-            const textarea = document.getElementById('adminReply');
-            const btnSend = document.getElementById('btnSendAdmin');
-            
-            if (isEnded) {
-                textarea.disabled = true;
-                textarea.placeholder = 'Chat sudah berakhir - Mode View Only';
-                btnSend.disabled = true;
-            } else {
-                textarea.disabled = false;
-                textarea.placeholder = 'Ketik balasan...';
-                btnSend.disabled = false;
-            }
-        }
-
-        // ✅ FUNGSI BARU: Admin mengakhiri chat
-        function endChatByAdmin() {
-            if (!currentSelectedChat) return;
-            
-            if (confirm('Yakin ingin mengakhiri percakapan ini?\n\nHistory chat akan tetap tersimpan dan bisa dilihat kapan saja.')) {
-                const endedTime = new Date().toLocaleString('id-ID');
-                
-                // Tandai chat sebagai ended
-                localStorage.setItem('chatEnded_' + currentSelectedChat, 'true');
-                
-                // Simpan waktu berakhir di ratings (untuk konsistensi data)
-                const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
-                const existingRating = ratings.find(r => r.chatId === currentSelectedChat);
-                
-                if (!existingRating) {
-                    ratings.push({
-                        chatId: currentSelectedChat,
-                        user: 'Admin Ended',
-                        rating: 0,
-                        feedback: 'Chat diakhiri oleh admin',
-                        time: endedTime,
-                        timestamp: Date.now()
-                    });
-                    localStorage.setItem('chat_ratings', JSON.stringify(ratings));
-                }
-                
-                // Hentikan suara notifikasi
-                stopPendingSoundLoop();
-                
-                // Refresh tampilan
-                loadActiveChat();
-                loadChatList();
-                
-                alert('✅ Percakapan berhasil diakhiri!\nHistory chat tetap tersimpan.');
-            }
-        }
-
-        function sendAdminReply() {
-            const reply = document.getElementById('adminReply').value.trim();
-            if (!reply || !currentSelectedChat) return;
-
-            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
-            transferStatus[currentSelectedChat] = false;
-            localStorage.setItem('chat_transfer_status', JSON.stringify(transferStatus));
-
-            const adminActiveChats = JSON.parse(localStorage.getItem('admin_active_chats') || '{}');
-            adminActiveChats[currentSelectedChat] = true;
-            localStorage.setItem('admin_active_chats', JSON.stringify(adminActiveChats));
-
-            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            messages.push({
-                chatId: currentSelectedChat,
-                user: 'Admin',
-                message: reply,
-                type: 'admin',
-                time: new Date().toLocaleString('id-ID'),
-                timestamp: Date.now()
-            });
-
-            localStorage.setItem('chat_messages', JSON.stringify(messages));
-            document.getElementById('adminReply').value = '';
-            loadActiveChat();
-            loadChatList();
-        }
-
-        function toggleBot() {
-            const isEnabled = document.getElementById('botToggle').checked;
-            let settings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
-            settings.enabled = isEnabled;
-            localStorage.setItem('bot_settings', JSON.stringify(settings));
-        }
-
-        function toggleTransfer() {
-            const isEnabled = document.getElementById('transferToggle').checked;
-            let settings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
-            settings.transferToAdmin = isEnabled;
-            localStorage.setItem('bot_settings', JSON.stringify(settings));
-        }
-
-        function addKeyword() {
-            const keywordList = document.getElementById('keywordList');
-            const div = document.createElement('div');
-            div.className = 'keyword-item';
-            div.innerHTML = `
-                <div class="keyword-item-header">
-                    <input type="text" placeholder="Keyword (pisahkan dengan koma, contoh: halo,p,pagi,siang)" class="keyword-input">
-                    <button class="btn-delete" onclick="this.parentElement.parentElement.remove()">Hapus</button>
-                </div>
-                <textarea class="response-input" placeholder="Response bot (Ctrl + Enter untuk baris baru)" rows="3"></textarea>
-                <div style="color: #666; font-size: 11px; margin-top: 5px;">💡 Tekan <strong>Ctrl + Enter</strong> untuk baris baru</div>
-            `;
-            keywordList.appendChild(div);
-            
-            const newTextarea = div.querySelector('.response-input');
-            newTextarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + 1;
-                }
-            });
-        }
-
-        function saveBotSettings() {
-            const isEnabled = document.getElementById('botToggle').checked;
-            const transferEnabled = document.getElementById('transferToggle').checked;
-            const defaultResponse = document.getElementById('defaultResponse').value;
-            
-            const keywordItems = document.querySelectorAll('.keyword-item');
-            const keywords = [];
-            
-            keywordItems.forEach(item => {
-                const keywordInput = item.querySelector('.keyword-input').value.trim();
-                const response = item.querySelector('.response-input').value.trim();
-                
-                if (keywordInput && response) {
-                    const keywordArray = keywordInput.split(',').map(k => k.trim()).filter(k => k);
-                    
-                    keywords.push({ 
-                        keywords: keywordArray,
-                        response: response 
-                    });
-                }
-            });
-
-            const settings = {
-                enabled: isEnabled,
-                transferToAdmin: transferEnabled,
-                defaultResponse: defaultResponse,
-                keywords: keywords
-            };
-
-            localStorage.setItem('bot_settings', JSON.stringify(settings));
-            alert('Setting bot berhasil disimpan!');
-        }
-
-        function loadBotSettings() {
-            const settings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
-            
-            document.getElementById('botToggle').checked = settings.enabled || false;
-            document.getElementById('transferToggle').checked = settings.transferToAdmin || false;
-            document.getElementById('defaultResponse').value = settings.defaultResponse || '';
-            
-            if (settings.keywords) {
-                settings.keywords.forEach(kw => {
-                    const keywordList = document.getElementById('keywordList');
-                    const div = document.createElement('div');
-                    div.className = 'keyword-item';
-                    
-                    const keywordsString = kw.keywords.join(', ');
-                    
-                    div.innerHTML = `
-                        <div class="keyword-item-header">
-                            <input type="text" value="${keywordsString}" placeholder="Keyword (pisahkan dengan koma)" class="keyword-input">
-                            <button class="btn-delete" onclick="this.parentElement.parentElement.remove()">Hapus</button>
-                        </div>
-                        <textarea class="response-input" placeholder="Response bot" rows="3">${kw.response}</textarea>
-                        <div class="keyword-tags">
-                            ${kw.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}
-                        </div>
-                    `;
-                    keywordList.appendChild(div);
-                    
-                    const textarea = div.querySelector('.response-input');
-                    textarea.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' && e.ctrlKey) {
-                            e.preventDefault();
-                            const start = this.selectionStart;
-                            const end = this.selectionEnd;
-                            this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
-                            this.selectionStart = this.selectionEnd = start + 1;
-                        }
-                    });
-                });
-            }
-        }
-
-        function loadRatings() {
-            const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
-            const ratingsList = document.getElementById('ratingsList');
-            
-            if (ratings.length > 0) {
-                const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
-                document.getElementById('avgRating').textContent = avg.toFixed(1) + '★';
-                
-                const sortedRatings = ratings.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
-                
-                ratingsList.innerHTML = sortedRatings.map(r => `
-                    <div class="rating-item">
-                        <div class="rating-header">
-                            <span class="rating-user">${r.user}</span>
-                            <span class="rating-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-                        </div>
-                        ${r.feedback ? `<div class="rating-feedback">${r.feedback}</div>` : ''}
-                        <div class="rating-time">${r.time}</div>
-                    </div>
-                `).join('');
-            } else {
-                ratingsList.innerHTML = '<p style="color: #888; text-align: center;">Belum ada penilaian</p>';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const textarea = document.getElementById('adminReply');
-            
-            textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
-                    e.preventDefault();
-                    sendAdminReply();
-                }
-                else if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + 1;
-                }
-            });
-        });
-
-        setInterval(() => {
-            loadChatList();
-            if (currentSelectedChat) loadActiveChat();
-            loadRatings();
-        }, 3000);
-
-        loadChatList();
-        loadBotSettings();
-        loadRatings();
+// Inisialisasi
+window.onload = function() {
+  loadChatList();
+  setInterval(loadChatList, 3000); // refresh daftar
+};
     </script>
 </body>
 </html>
