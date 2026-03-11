@@ -1013,6 +1013,12 @@
                 minimizeChat();
             }
         });
+
+        // Debug bot response
+console.log('Bot Settings:', localStorage.getItem('bot_settings'));
+console.log('Keywords:', JSON.parse(localStorage.getItem('bot_settings') || '{}').keywords);
+        
     </script>
 </body>
+
 </html>
