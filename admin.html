@@ -846,100 +846,240 @@
     </div>
 
     <script>
-        let currentSelectedChat = null;
+  <script>
+  // Inisialisasi Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-// ===== LOAD DAFTAR CHAT =====
-function loadChatList() {
-  db.ref('chats').on('value', (snapshot) => {
-    const chats = snapshot.val();
-    const chatListDiv = document.getElementById('chatList');
-    if (!chats) {
-      chatListDiv.innerHTML = '<p style="color:#888;">Belum ada percakapan</p>';
-      return;
+  let currentSelectedChat = null;
+  let currentMessagesListener = null;
+
+  // ===== FUNGSI TAMBAHAN UNTUK ADMIN PANEL =====
+  function toggleSound() {
+    alert('Fitur suara dapat diaktifkan/dinonaktifkan di sini.');
+  }
+
+  function toggleBot() {
+    console.log('Bot toggled:', document.getElementById('botToggle').checked);
+  }
+
+  function toggleTransfer() {
+    console.log('Transfer toggled:', document.getElementById('transferToggle').checked);
+  }
+
+  function addKeyword() {
+    const container = document.getElementById('keywordList');
+    const newItem = document.createElement('div');
+    newItem.className = 'keyword-item';
+    newItem.innerHTML = `
+      <div class="keyword-item-header">
+        <input type="text" placeholder="Keyword (pisahkan dengan koma)" value="baru">
+        <button class="btn-delete" onclick="this.parentElement.parentElement.remove()">Hapus</button>
+      </div>
+      <textarea placeholder="Respon untuk keyword ini">Respon default</textarea>
+    `;
+    container.appendChild(newItem);
+  }
+
+  function saveBotSettings() {
+    alert('Pengaturan bot disimpan (contoh). Implementasi sesungguhnya bisa ditambahkan.');
+  }
+
+  // ===== FUNGSI CHAT =====
+  function displayAdminMessage(msg) {
+    const container = document.getElementById('activeChatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${msg.type || 'user'}`;
+    messageDiv.innerHTML = `
+      <div class="message-bubble">${escapeHTML(msg.message)}</div>
+      <div class="message-time">${msg.time || ''}</div>
+    `;
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      if (m === '"') return '&quot;';
+      return m;
+    });
+  }
+
+  // ===== LOAD DAFTAR CHAT =====
+  function loadChatList() {
+    db.ref('chats').on('value', (snapshot) => {
+      const chats = snapshot.val();
+      const chatListDiv = document.getElementById('chatList');
+      if (!chats) {
+        chatListDiv.innerHTML = '<p style="color:#888;">Belum ada percakapan</p>';
+        return;
+      }
+
+      // Ambil semua chat dan hitung statistik
+      let total = 0, active = 0, pending = 0, ended = 0;
+      const chatArray = Object.keys(chats).map(key => {
+        const chat = chats[key];
+        total++;
+        if (chat.isEnded) ended++;
+        else if (chat.adminActive) active++;
+        else pending++;
+
+        // Ambil pesan terakhir
+        let lastMsg = '...';
+        if (chat.messages) {
+          const msgKeys = Object.keys(chat.messages);
+          if (msgKeys.length > 0) {
+            const lastKey = msgKeys[msgKeys.length - 1];
+            lastMsg = chat.messages[lastKey].message || '...';
+          }
+        }
+
+        return {
+          chatId: key,
+          user: chat.user || 'Anonymous',
+          lastMessage: lastMsg,
+          lastTime: chat.startedAt ? new Date(chat.startedAt).toLocaleString('id-ID') : '-',
+          isEnded: chat.isEnded || false,
+          isPendingAdmin: !chat.adminActive && !chat.isEnded
+        };
+      });
+
+      // Update statistik
+      document.getElementById('totalChats').innerText = total;
+      document.getElementById('activeChats').innerText = active;
+      document.getElementById('pendingChats').innerText = pending;
+      document.getElementById('endedChats').innerText = ended;
+
+      // Urutkan: yang pending di atas, lalu aktif, lalu ended
+      chatArray.sort((a, b) => {
+        if (a.isEnded !== b.isEnded) return a.isEnded ? 1 : -1;
+        if (a.isPendingAdmin !== b.isPendingAdmin) return a.isPendingAdmin ? -1 : 1;
+        return 0;
+      });
+
+      chatListDiv.innerHTML = chatArray.map(chat => `
+        <div class="chat-item ${currentSelectedChat === chat.chatId ? 'active' : ''} ${chat.isPendingAdmin ? 'pending-admin' : ''} ${chat.isEnded ? 'chat-ended' : ''}" onclick="selectChat('${chat.chatId}')">
+          <div class="chat-item-header">
+            <span class="chat-item-user">${escapeHTML(chat.user)}</span>
+            <span class="chat-item-time">${chat.lastTime}</span>
+            ${chat.isEnded ? '<span class="ended-badge">ENDED</span>' : ''}
+            ${chat.isPendingAdmin ? '<span class="unread-badge">PENDING</span>' : ''}
+          </div>
+          <div class="chat-item-preview">${escapeHTML(chat.lastMessage)}</div>
+        </div>
+      `).join('');
+    });
+  }
+
+  // ===== PILIH CHAT =====
+  function selectChat(chatId) {
+    currentSelectedChat = chatId;
+
+    // Tampilkan konten chat
+    document.getElementById('noChatSelected').style.display = 'none';
+    document.getElementById('activeChatContent').style.display = 'flex';
+
+    // Bersihkan pesan lama
+    document.getElementById('activeChatMessages').innerHTML = '';
+
+    // Hentikan listener sebelumnya
+    if (currentMessagesListener) {
+      currentMessagesListener.off();
     }
 
-    const chatArray = Object.keys(chats).map(key => {
-      const chat = chats[key];
-      return {
-        chatId: key,
-        user: chat.user,
-        lastMessage: '...', // bisa diambil dari pesan terakhir
-        lastTime: new Date(chat.startedAt).toLocaleString('id-ID'),
-        isEnded: chat.isEnded || false,
-        isPendingAdmin: !chat.adminActive && !chat.isEnded
-      };
+    // Load pesan chat
+    const chatRef = db.ref('chats/' + chatId);
+    chatRef.once('value', (snap) => {
+      const chatData = snap.val();
+      if (chatData) {
+        document.getElementById('activeChatUser').innerText = chatData.user || 'User';
+        document.getElementById('activeChatTime').innerText = chatData.startedAt ? 'Dimulai: ' + new Date(chatData.startedAt).toLocaleString('id-ID') : 'Terakhir aktif: -';
+      }
     });
 
-    // Urutkan: yang pending/aktif di atas, yang ended di bawah
-    chatArray.sort((a, b) => {
-      if (a.isEnded && !b.isEnded) return 1;
-      if (!a.isEnded && b.isEnded) return -1;
-      return 0;
+    // Tandai admin sedang aktif
+    chatRef.update({ adminActive: true });
+
+    // Listener untuk pesan baru
+    const messagesRef = db.ref('chats/' + chatId + '/messages');
+    currentMessagesListener = messagesRef.on('child_added', (snapshot) => {
+      const msg = snapshot.val();
+      displayAdminMessage(msg);
     });
 
-    chatListDiv.innerHTML = chatArray.map(chat => `
-      <div class="chat-item ${currentSelectedChat === chat.chatId ? 'active' : ''} ${chat.isPendingAdmin ? 'pending-admin' : ''} ${chat.isEnded ? 'chat-ended' : ''}" onclick="selectChat('${chat.chatId}')">
-        <div class="chat-item-header">
-          <span class="chat-item-user">${chat.user}</span>
-          <span class="chat-item-time">${chat.lastTime}</span>
-          ${chat.isEnded ? '<span class="ended-badge">ENDED</span>' : ''}
-          ${chat.isPendingAdmin ? '<span class="unread-badge">PENDING</span>' : ''}
-        </div>
-        <div class="chat-item-preview">${chat.lastMessage}</div>
-      </div>
-    `).join('');
-  });
-}
-
-// ===== PILIH CHAT =====
-function selectChat(chatId) {
-  currentSelectedChat = chatId;
-  loadActiveChat(chatId);
-}
-
-// ===== LOAD PESAN CHAT TERPILIH =====
-function loadActiveChat(chatId) {
-  const messagesRef = db.ref('chats/' + chatId + '/messages');
-  messagesRef.off(); // bersihkan listener lama
-  messagesRef.on('child_added', (snapshot) => {
-    const msg = snapshot.val();
-    displayAdminMessage(msg);
-  });
-
-  // Tandai bahwa admin sedang aktif di chat ini
-  db.ref('chats/' + chatId).update({ adminActive: true });
-}
-
-// ===== KIRIM BALASAN ADMIN =====
-function sendAdminReply() {
-  const reply = document.getElementById('adminReply').value.trim();
-  if (!reply || !currentSelectedChat) return;
-
-  const msgData = {
-    user: 'Admin',
-    message: reply,
-    type: 'admin',
-    time: new Date().toLocaleString('id-ID'),
-    timestamp: firebase.database.ServerValue.TIMESTAMP
-  };
-  db.ref('chats/' + currentSelectedChat + '/messages').push(msgData);
-  document.getElementById('adminReply').value = '';
-}
-
-// ===== AKHIRI CHAT OLEH ADMIN =====
-function endChatByAdmin() {
-  if (!currentSelectedChat) return;
-  if (confirm('Yakin ingin mengakhiri percakapan ini?')) {
-    db.ref('chats/' + currentSelectedChat).update({ isEnded: true, endedAt: firebase.database.ServerValue.TIMESTAMP });
-    loadChatList();
+    // Enable/disable input berdasarkan status ended
+    const isEnded = false; // akan dicek nanti
+    chatRef.child('isEnded').once('value', (snap) => {
+      const ended = snap.val();
+      document.getElementById('adminReply').disabled = ended;
+      document.getElementById('btnSendAdmin').disabled = ended;
+      document.getElementById('btnEndChat').disabled = ended;
+      if (ended) {
+        const notice = document.createElement('div');
+        notice.className = 'chat-ended-notice';
+        notice.innerText = 'Percakapan ini telah diakhiri.';
+        document.getElementById('activeChatMessages').appendChild(notice);
+      }
+    });
   }
-}
 
-// Inisialisasi
-window.onload = function() {
-  loadChatList();
-  setInterval(loadChatList, 3000); // refresh daftar
-};
+  // ===== KIRIM BALASAN ADMIN =====
+  function sendAdminReply() {
+    const reply = document.getElementById('adminReply').value.trim();
+    if (!reply || !currentSelectedChat) return;
+
+    const msgData = {
+      user: 'Admin',
+      message: reply,
+      type: 'admin',
+      time: new Date().toLocaleString('id-ID'),
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    db.ref('chats/' + currentSelectedChat + '/messages').push(msgData);
+    document.getElementById('adminReply').value = '';
+  }
+
+  // ===== AKHIRI CHAT OLEH ADMIN =====
+  function endChatByAdmin() {
+    if (!currentSelectedChat) return;
+    if (confirm('Yakin ingin mengakhiri percakapan ini?')) {
+      db.ref('chats/' + currentSelectedChat).update({ 
+        isEnded: true, 
+        endedAt: firebase.database.ServerValue.TIMESTAMP 
+      });
+      // Nonaktifkan input
+      document.getElementById('adminReply').disabled = true;
+      document.getElementById('btnSendAdmin').disabled = true;
+      document.getElementById('btnEndChat').disabled = true;
+    }
+  }
+
+  // ===== SHORTCUT ENTER =====
+  document.addEventListener('DOMContentLoaded', function() {
+    const adminReply = document.getElementById('adminReply');
+    if (adminReply) {
+      adminReply.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+          e.preventDefault();
+          sendAdminReply();
+        } else if (e.key === 'Enter' && e.ctrlKey) {
+          // Ctrl+Enter untuk baris baru, biarkan default
+        }
+      });
+    }
+  });
+
+  // ===== INISIALISASI =====
+  window.onload = function() {
+    loadChatList();
+    setInterval(loadChatList, 3000); // refresh daftar berkala
+  };
+</script>
     </script>
 </body>
 </html>
+
