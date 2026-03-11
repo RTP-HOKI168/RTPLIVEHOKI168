@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Live Chat HOKI168</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a0f2e 0%, #0d0518 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .admin-header h1 {
+            color: #000;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+        }
+
+        .stat-card h3 {
+            font-size: 32px;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        .chat-list-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            height: 70vh;
+            overflow-y: auto;
+        }
+
+        .chat-list-panel h3 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .chat-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .chat-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-left-color: #FFD700;
+            transform: translateX(5px);
+        }
+
+        .chat-item.active {
+            background: rgba(255, 215, 0, 0.2);
+            border-left-color: #FFD700;
+        }
+
+        .chat-item.pending-admin {
+            border-left: 4px solid #ff9800;
+            background: rgba(255, 200, 0, 0.1);
+        }
+
+        .chat-item.chat-ended {
+            border-left: 4px solid #666;
+            background: rgba(100, 100, 100, 0.1);
+            opacity: 0.8;
+            cursor: pointer !important;
+        }
+
+        .chat-item.chat-ended:hover {
+            opacity: 1;
+            background: rgba(150, 150, 150, 0.2);
+        }
+
+        .chat-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .chat-item-user {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .chat-item-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .chat-item-preview {
+            color: #aaa;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .unread-badge {
+            background: #ff9800;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .admin-active-badge {
+            background: #00ff00;
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .ended-badge {
+            background: #666;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        .view-only-badge {
+            background: #666;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .ended-time {
+            color: #888;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .active-chat-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+        }
+
+        .active-chat-header {
+            padding: 20px;
+            background: rgba(255, 215, 0, 0.1);
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .active-chat-header h3 {
+            color: #FFD700;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .active-chat-header p {
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .active-chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message.admin, .message.bot {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-bubble {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.admin .message-bubble, .message.bot .message-bubble {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .chat-reply-area {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 0 0 15px 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-reply-area textarea {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 25px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            resize: none;
+            font-size: 14px;
+        }
+
+        .chat-reply-area textarea:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .chat-reply-area textarea:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-send-admin {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .btn-send-admin:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+
+        .btn-send-admin:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ✅ Tombol Akhiri Chat */
+        .btn-end-chat {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-end-chat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+        }
+
+        .btn-end-chat:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .bot-settings, .ratings-section {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .bot-settings h3, .ratings-section h3 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .toggle-switch label {
+            color: #fff;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            width: 50px;
+            height: 26px;
+            background: #555;
+            border-radius: 25px;
+            position: relative;
+            cursor: pointer;
+            transition: 0.3s;
+            flex-shrink: 0;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: #FFD700;
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(24px);
+        }
+
+        .form-group-full {
+            margin-bottom: 20px;
+        }
+
+        .form-group-full label {
+            display: block;
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .form-group-full input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .form-group-full input:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .keyword-list {
+            margin-top: 20px;
+        }
+
+        .keyword-list h4 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .keyword-info {
+            background: rgba(255, 215, 0, 0.1);
+            border-left: 4px solid #FFD700;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #FFD700;
+        }
+
+        .keyword-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .keyword-item-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .keyword-item input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .keyword-item input:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .keyword-item textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .keyword-item textarea:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .keyword-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .keyword-tag {
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+        }
+
+        .btn-delete {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn-delete:hover {
+            background: #cc0000;
+        }
+
+        .btn-add-keyword, .btn-save-bot {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            margin-right: 10px;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .btn-add-keyword:hover, .btn-save-bot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .rating-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #FFD700;
+        }
+
+        .rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .rating-user {
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .rating-stars {
+            color: #FFD700;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        .rating-feedback {
+            color: #aaa;
+            font-size: 13px;
+            font-style: italic;
+            margin: 8px 0;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .rating-time {
+            color: #666;
+            font-size: 11px;
+        }
+
+        .no-chat-selected {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+            font-size: 18px;
+        }
+
+        .chat-ended-notice {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid #ff9800;
+            border-radius: 10px;
+            color: #ff9800;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .keyboard-hint {
+            color: #666;
+            font-size: 11px;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* Sound Notification Styles */
+        .sound-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .sound-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .sound-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+        }
+        
+        .sound-icon svg {
+            fill: #000;
+            width: 24px;
+            height: 24px;
+        }
+        
+        @keyframes sound-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+        }
+        
+        .sound-icon.active {
+            animation: sound-pulse 1.5s infinite;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #FFD700;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFA500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Audio element untuk notifikasi suara -->
+    <audio id="pendingSound" preload="auto">
+        <source src="notification.mp3" type="audio/mpeg">
+    </audio>
+    
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>💬 Live Chat Admin Panel - HOKI168</h1>
+            <p>Kelola percakapan dengan user dan setting bot auto-reply</p>
+        </div>
+
+        <!-- Ikon notifikasi suara -->
+        <div class="sound-notification">
+            <div class="sound-icon" id="soundIcon" onclick="toggleSound()" title="Toggle Sound Notification">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="totalChats">0</h3>
+                <p>Total Percakapan</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="activeChats">0</h3>
+                <p>Percakapan Aktif</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="pendingChats">0</h3>
+                <p>Menunggu Admin</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="endedChats">0</h3>
+                <p>Chat Berakhir</p>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chat-list-panel">
+                <h3>Daftar Percakapan</h3>
+                <div id="chatList">
+                    <p style="color: #888; text-align: center; margin-top: 50px;">Belum ada percakapan</p>
+                </div>
+
+                <div class="ratings-section">
+                    <h3>⭐ Penilaian User</h3>
+                    <div id="ratingsList">
+                        <p style="color: #888; text-align: center;">Belum ada penilaian</p>
+                    </div>
+                </div>
+
+                <div class="bot-settings">
+                    <h3>🤖 Setting Bot Auto-Reply</h3>
+                    
+                    <div class="toggle-switch">
+                        <label>Aktifkan Bot</label>
+                        <input type="checkbox" id="botToggle" onchange="toggleBot()">
+                        <label class="toggle-slider" for="botToggle"></label>
+                    </div>
+
+                    <div class="toggle-switch">
+                        <label>Transfer ke Admin jika tidak ada keyword</label>
+                        <input type="checkbox" id="transferToggle" onchange="toggleTransfer()">
+                        <label class="toggle-slider" for="transferToggle"></label>
+                    </div>
+
+                    <div class="form-group-full">
+                        <label>Default Response:</label>
+                        <input type="text" id="defaultResponse" placeholder="Response default jika keyword tidak cocok">
+                    </div>
+
+                    <div class="keyword-list">
+                        <h4>Keyword & Response:</h4>
+                        
+                        <div class="keyword-info">
+                            💡 <strong>Tip:</strong> Pisahkan keyword dengan koma (,) untuk membuat keyword gabungan. 
+                            Contoh: <em>halo,p,pagi,siang,malam</em>
+                        </div>
+                        
+                        <div id="keywordList">
+                        </div>
+                    </div>
+
+                    <button class="btn-add-keyword" onclick="addKeyword()">+ Tambah Keyword</button>
+                    <button class="btn-save-bot" onclick="saveBotSettings()">💾 Simpan Setting Bot</button>
+                </div>
+            </div>
+
+            <div class="active-chat-panel">
+                <div id="noChatSelected" class="no-chat-selected">
+                    <p>👈 Pilih percakapan dari daftar untuk melihat pesan</p>
+                </div>
+                
+                <div id="activeChatContent" style="display: none; flex-direction: column; height: 100%;">
+                    <div class="active-chat-header">
+                        <div>
+                            <h3 id="activeChatUser">Username</h3>
+                            <p id="activeChatTime">Terakhir aktif: -</p>
+                        </div>
+                        <!-- ✅ Tombol Akhiri Chat -->
+                        <button class="btn-end-chat" id="btnEndChat" onclick="endChatByAdmin()" title="Akhiri Percakapan">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                            </svg>
+                            Akhiri Chat
+                        </button>
+                    </div>
+                    
+                    <div class="active-chat-messages" id="activeChatMessages">
+                    </div>
+                    
+                    <div class="chat-reply-area" id="chatReplyArea">
+                        <textarea id="adminReply" placeholder="Ketik balasan..." rows="2"></textarea>
+                        <button class="btn-send-admin" id="btnSendAdmin" onclick="sendAdminReply()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#000">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="keyboard-hint">💡 Tekan <strong>Enter</strong> untuk kirim, <strong>CTRL + Enter</strong> untuk baris baru</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSelectedChat = null;
+        let botKeywords = [];
+        let pendingSoundInterval = null;
+        let isSoundPlaying = false;
+        
+        const soundIcon = document.getElementById('soundIcon');
+        const pendingSound = document.getElementById('pendingSound');
+
+        // Fungsi untuk memutar suara notifikasi
+        function playNotificationSound() {
+            if (!pendingSound) return;
+            
+            try {
+                pendingSound.currentTime = 0;
+                pendingSound.play();
+                isSoundPlaying = true;
+                if (soundIcon) soundIcon.classList.add('active');
+            } catch (e) {
+                console.log("Gagal memutar suara:", e);
+                isSoundPlaying = false;
+                if (soundIcon) soundIcon.classList.remove('active');
+            }
+        }
+        
+        // Fungsi untuk menghentikan suara
+        function stopNotificationSound() {
+            if (pendingSound) {
+                pendingSound.pause();
+                pendingSound.currentTime = 0;
+                isSoundPlaying = false;
+                if (soundIcon) soundIcon.classList.remove('active');
+            }
+        }
+        
+        // Fungsi untuk memicu suara notifikasi
+        function triggerPendingSound() {
+            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
+            
+            for (const chatId in transferStatus) {
+                if (transferStatus[chatId]) {
+                    const endedStatus = localStorage.getItem('chatEnded_' + chatId);
+                    if (endedStatus !== 'true') {
+                        playNotificationSound();
+                        return;
+                    }
+                }
+            }
+            
+            stopNotificationSound();
+        }
+        
+        // Fungsi untuk memulai loop suara (setiap 5 detik)
+        function startPendingSoundLoop() {
+            if (pendingSoundInterval) clearInterval(pendingSoundInterval);
+            
+            pendingSoundInterval = setInterval(() => {
+                triggerPendingSound();
+            }, 5000);
+        }
+        
+        // Fungsi untuk menghentikan loop suara
+        function stopPendingSoundLoop() {
+            if (pendingSoundInterval) {
+                clearInterval(pendingSoundInterval);
+                pendingSoundInterval = null;
+            }
+            stopNotificationSound();
+        }
+        
+        // Fungsi untuk toggle suara on/off
+        function toggleSound() {
+            if (isSoundPlaying) {
+                stopPendingSoundLoop();
+            } else {
+                startPendingSoundLoop();
+            }
+        }
+
+        window.onload = function() {
+            loadChatList();
+            startPendingSoundLoop();
+            setInterval(loadChatList, 3000);
+        };
+
+        function loadChatList() {
+            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
+            const adminActiveChats = JSON.parse(localStorage.getItem('admin_active_chats') || '{}');
+            const chats = {};
+
+            messages.forEach(msg => {
+                if (!chats[msg.chatId]) {
+                    chats[msg.chatId] = {
+                        chatId: msg.chatId,
+                        user: msg.user,
+                        lastMessage: msg.message,
+                        lastTime: msg.time,
+                        timestamp: msg.timestamp,
+                        unread: 0,
+                        isPendingAdmin: false,
+                        isAdminActive: false,
+                        isEnded: false,
+                        endedAt: null
+                    };
+                } else {
+                    chats[msg.chatId].lastMessage = msg.message;
+                    chats[msg.chatId].lastTime = msg.time;
+                    chats[msg.chatId].timestamp = msg.timestamp;
+                }
+
+                if (msg.type === 'admin') {
+                    chats[msg.chatId].isAdminActive = true;
+                }
+            });
+
+            Object.keys(chats).forEach(chatId => {
+                const endedStatus = localStorage.getItem('chatEnded_' + chatId);
+                if (endedStatus === 'true') {
+                    chats[chatId].isEnded = true;
+                    const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
+                    const rating = ratings.find(r => r.chatId === chatId);
+                    if (rating) {
+                        chats[chatId].endedAt = rating.time;
+                    }
+                }
+            });
+
+            Object.values(chats).forEach(chat => {
+                if (transferStatus[chat.chatId] && !chat.isAdminActive) {
+                    chat.isPendingAdmin = true;
+                }
+            });
+
+            const totalChats = Object.keys(chats).length;
+            const activeChats = Object.values(chats).filter(c => !c.isEnded).length;
+            const endedChatsCount = Object.values(chats).filter(c => c.isEnded).length;
+            const pendingCount = Object.values(chats).filter(c => c.isPendingAdmin && !c.isEnded).length;
+            
+            document.getElementById('totalChats').textContent = totalChats;
+            document.getElementById('activeChats').textContent = activeChats;
+            document.getElementById('pendingChats').textContent = pendingCount;
+            document.getElementById('endedChats').textContent = endedChatsCount;
+
+            const chatListDiv = document.getElementById('chatList');
+            const chatArray = Object.values(chats).sort((a, b) => {
+                if (a.isEnded && !b.isEnded) return 1;
+                if (!a.isEnded && b.isEnded) return -1;
+                return b.timestamp - a.timestamp;
+            });
+
+            if (chatArray.length === 0) {
+                chatListDiv.innerHTML = '<p style="color: #888; text-align: center; margin-top: 50px;">Belum ada percakapan</p>';
+                return;
+            }
+
+            chatListDiv.innerHTML = chatArray.map(chat => `
+                <div class="chat-item ${currentSelectedChat === chat.chatId ? 'active' : ''} ${chat.isPendingAdmin ? 'pending-admin' : ''} ${chat.isEnded ? 'chat-ended' : ''}" 
+                     onclick="selectChat('${chat.chatId}', ${chat.isEnded})" style="cursor: pointer;">
+                    <div class="chat-item-header">
+                        <span class="chat-item-user">${chat.user}</span>
+                        <span class="chat-item-time">${chat.lastTime}</span>
+                        ${chat.isEnded ? '<span class="ended-badge">ENDED</span>' : ''}
+                        ${!chat.isEnded && chat.isPendingAdmin ? '<span class="unread-badge">PENDING</span>' : ''}
+                        ${!chat.isEnded && chat.isAdminActive ? '<span class="admin-active-badge">ADMIN</span>' : ''}
+                    </div>
+                    <div class="chat-item-preview">${chat.lastMessage}</div>
+                    ${chat.isEnded && chat.endedAt ? `<div class="ended-time">⏰ Berakhir: ${chat.endedAt}</div>` : ''}
+                </div>
+            `).join('');
+
+            triggerPendingSound();
+        }
+
+        function selectChat(chatId, isEndedChat = false) {
+            currentSelectedChat = chatId;
+            loadChatList();
+            loadActiveChat();
+            
+            stopPendingSoundLoop();
+            
+            if (isEndedChat) {
+                const textarea = document.getElementById('adminReply');
+                const btnSend = document.getElementById('btnSendAdmin');
+                const btnEnd = document.getElementById('btnEndChat');
+                
+                textarea.disabled = true;
+                textarea.placeholder = 'Chat sudah berakhir - Mode View Only';
+                btnSend.disabled = true;
+                btnEnd.disabled = true;
+                
+                document.getElementById('activeChatUser').innerHTML += ' <span class="view-only-badge">VIEW ONLY</span>';
+                return;
+            }
+            
+            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
+            if (transferStatus[chatId]) {
+                setTimeout(() => {
+                    if (confirm('Chat ini sedang menunggu admin. Ambil alih percakapan?')) {
+                        transferStatus[chatId] = false;
+                        localStorage.setItem('chat_transfer_status', JSON.stringify(transferStatus));
+                        
+                        const adminActiveChats = JSON.parse(localStorage.getItem('admin_active_chats') || '{}');
+                        adminActiveChats[chatId] = true;
+                        localStorage.setItem('admin_active_chats', JSON.stringify(adminActiveChats));
+                        
+                        loadChatList();
+                    }
+                }, 500);
+            }
+        }
+
+        function loadActiveChat() {
+            if (!currentSelectedChat) return;
+
+            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+            const chatMessages = messages.filter(m => m.chatId === currentSelectedChat);
+            
+            if (chatMessages.length === 0) return;
+
+            document.getElementById('noChatSelected').style.display = 'none';
+            document.getElementById('activeChatContent').style.display = 'flex';
+            
+            const endedStatus = localStorage.getItem('chatEnded_' + currentSelectedChat);
+            const isEnded = endedStatus === 'true';
+            
+            const btnEnd = document.getElementById('btnEndChat');
+            
+            if (isEnded) {
+                document.getElementById('activeChatUser').innerHTML = `
+                    ${chatMessages[0].user} 
+                    <span class="ended-badge">ENDED</span>
+                    <span class="view-only-badge">VIEW ONLY</span>
+                `;
+                btnEnd.disabled = true;
+            } else {
+                document.getElementById('activeChatUser').textContent = chatMessages[0].user;
+                btnEnd.disabled = false;
+            }
+            
+            document.getElementById('activeChatTime').textContent = 'Terakhir aktif: ' + chatMessages[chatMessages.length - 1].time;
+
+            const messagesDiv = document.getElementById('activeChatMessages');
+            messagesDiv.innerHTML = '';
+            
+            if (isEnded) {
+                const noticeDiv = document.createElement('div');
+                noticeDiv.className = 'chat-ended-notice';
+                noticeDiv.innerHTML = '📋 Percakapan ini sudah diakhiri<br><small>Mode: View Only - Tidak dapat membalas</small>';
+                messagesDiv.appendChild(noticeDiv);
+            }
+
+            chatMessages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message ' + msg.type;
+                msgDiv.innerHTML = `
+                    <div class="message-bubble">${msg.message}</div>
+                    <div class="message-time">${msg.time}</div>
+                `;
+                messagesDiv.appendChild(msgDiv);
+            });
+
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            const textarea = document.getElementById('adminReply');
+            const btnSend = document.getElementById('btnSendAdmin');
+            
+            if (isEnded) {
+                textarea.disabled = true;
+                textarea.placeholder = 'Chat sudah berakhir - Mode View Only';
+                btnSend.disabled = true;
+            } else {
+                textarea.disabled = false;
+                textarea.placeholder = 'Ketik balasan...';
+                btnSend.disabled = false;
+            }
+        }
+
+        // ✅ FUNGSI BARU: Admin mengakhiri chat
+        function endChatByAdmin() {
+            if (!currentSelectedChat) return;
+            
+            if (confirm('Yakin ingin mengakhiri percakapan ini?\n\nHistory chat akan tetap tersimpan dan bisa dilihat kapan saja.')) {
+                const endedTime = new Date().toLocaleString('id-ID');
+                
+                // Tandai chat sebagai ended
+                localStorage.setItem('chatEnded_' + currentSelectedChat, 'true');
+                
+                // Simpan waktu berakhir di ratings (untuk konsistensi data)
+                const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
+                const existingRating = ratings.find(r => r.chatId === currentSelectedChat);
+                
+                if (!existingRating) {
+                    ratings.push({
+                        chatId: currentSelectedChat,
+                        user: 'Admin Ended',
+                        rating: 0,
+                        feedback: 'Chat diakhiri oleh admin',
+                        time: endedTime,
+                        timestamp: Date.now()
+                    });
+                    localStorage.setItem('chat_ratings', JSON.stringify(ratings));
+                }
+                
+                // Hentikan suara notifikasi
+                stopPendingSoundLoop();
+                
+                // Refresh tampilan
+                loadActiveChat();
+                loadChatList();
+                
+                alert('✅ Percakapan berhasil diakhiri!\nHistory chat tetap tersimpan.');
+            }
+        }
+
+        function sendAdminReply() {
+            const reply = document.getElementById('adminReply').value.trim();
+            if (!reply || !currentSelectedChat) return;
+
+            const transferStatus = JSON.parse(localStorage.getItem('chat_transfer_status') || '{}');
+            transferStatus[currentSelectedChat] = false;
+            localStorage.setItem('chat_transfer_status', JSON.stringify(transferStatus));
+
+            const adminActiveChats = JSON.parse(localStorage.getItem('admin_active_chats') || '{}');
+            adminActiveChats[currentSelectedChat] = true;
+            localStorage.setItem('admin_active_chats', JSON.stringify(adminActiveChats));
+
+            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+            messages.push({
+                chatId: currentSelectedChat,
+                user: 'Admin',
+                message: reply,
+                type: 'admin',
+                time: new Date().toLocaleString('id-ID'),
+                timestamp: Date.now()
+            });
+
+            localStorage.setItem('chat_messages', JSON.stringify(messages));
+            document.getElementById('adminReply').value = '';
+            loadActiveChat();
+            loadChatList();
+        }
+
+        function toggleBot() {
+            const isEnabled = document.getElementById('botToggle').checked;
+            let settings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
+            settings.enabled = isEnabled;
+            localStorage.setItem('bot_settings', JSON.stringify(settings));
+        }
+
+        function toggleTransfer() {
+            const isEnabled = document.getElementById('transferToggle').checked;
+            let settings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
+            settings.transferToAdmin = isEnabled;
+            localStorage.setItem('bot_settings', JSON.stringify(settings));
+        }
+
+        function addKeyword() {
+            const keywordList = document.getElementById('keywordList');
+            const div = document.createElement('div');
+            div.className = 'keyword-item';
+            div.innerHTML = `
+                <div class="keyword-item-header">
+                    <input type="text" placeholder="Keyword (pisahkan dengan koma, contoh: halo,p,pagi,siang)" class="keyword-input">
+                    <button class="btn-delete" onclick="this.parentElement.parentElement.remove()">Hapus</button>
+                </div>
+                <textarea class="response-input" placeholder="Response bot (Ctrl + Enter untuk baris baru)" rows="3"></textarea>
+                <div style="color: #666; font-size: 11px; margin-top: 5px;">💡 Tekan <strong>Ctrl + Enter</strong> untuk baris baru</div>
+            `;
+            keywordList.appendChild(div);
+            
+            const newTextarea = div.querySelector('.response-input');
+            newTextarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1;
+                }
+            });
+        }
+
+        function saveBotSettings() {
+            const isEnabled = document.getElementById('botToggle').checked;
+            const transferEnabled = document.getElementById('transferToggle').checked;
+            const defaultResponse = document.getElementById('defaultResponse').value;
+            
+            const keywordItems = document.querySelectorAll('.keyword-item');
+            const keywords = [];
+            
+            keywordItems.forEach(item => {
+                const keywordInput = item.querySelector('.keyword-input').value.trim();
+                const response = item.querySelector('.response-input').value.trim();
+                
+                if (keywordInput && response) {
+                    const keywordArray = keywordInput.split(',').map(k => k.trim()).filter(k => k);
+                    
+                    keywords.push({ 
+                        keywords: keywordArray,
+                        response: response 
+                    });
+                }
+            });
+
+            const settings = {
+                enabled: isEnabled,
+                transferToAdmin: transferEnabled,
+                defaultResponse: defaultResponse,
+                keywords: keywords
+            };
+
+            localStorage.setItem('bot_settings', JSON.stringify(settings));
+            alert('Setting bot berhasil disimpan!');
+        }
+
+        function loadBotSettings() {
+            const settings = JSON.parse(localStorage.getItem('bot_settings') || '{}');
+            
+            document.getElementById('botToggle').checked = settings.enabled || false;
+            document.getElementById('transferToggle').checked = settings.transferToAdmin || false;
+            document.getElementById('defaultResponse').value = settings.defaultResponse || '';
+            
+            if (settings.keywords) {
+                settings.keywords.forEach(kw => {
+                    const keywordList = document.getElementById('keywordList');
+                    const div = document.createElement('div');
+                    div.className = 'keyword-item';
+                    
+                    const keywordsString = kw.keywords.join(', ');
+                    
+                    div.innerHTML = `
+                        <div class="keyword-item-header">
+                            <input type="text" value="${keywordsString}" placeholder="Keyword (pisahkan dengan koma)" class="keyword-input">
+                            <button class="btn-delete" onclick="this.parentElement.parentElement.remove()">Hapus</button>
+                        </div>
+                        <textarea class="response-input" placeholder="Response bot" rows="3">${kw.response}</textarea>
+                        <div class="keyword-tags">
+                            ${kw.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}
+                        </div>
+                    `;
+                    keywordList.appendChild(div);
+                    
+                    const textarea = div.querySelector('.response-input');
+                    textarea.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                            e.preventDefault();
+                            const start = this.selectionStart;
+                            const end = this.selectionEnd;
+                            this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
+                            this.selectionStart = this.selectionEnd = start + 1;
+                        }
+                    });
+                });
+            }
+        }
+
+        function loadRatings() {
+            const ratings = JSON.parse(localStorage.getItem('chat_ratings') || '[]');
+            const ratingsList = document.getElementById('ratingsList');
+            
+            if (ratings.length > 0) {
+                const avg = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+                document.getElementById('avgRating').textContent = avg.toFixed(1) + '★';
+                
+                const sortedRatings = ratings.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+                
+                ratingsList.innerHTML = sortedRatings.map(r => `
+                    <div class="rating-item">
+                        <div class="rating-header">
+                            <span class="rating-user">${r.user}</span>
+                            <span class="rating-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                        </div>
+                        ${r.feedback ? `<div class="rating-feedback">${r.feedback}</div>` : ''}
+                        <div class="rating-time">${r.time}</div>
+                    </div>
+                `).join('');
+            } else {
+                ratingsList.innerHTML = '<p style="color: #888; text-align: center;">Belum ada penilaian</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('adminReply');
+            
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+                    e.preventDefault();
+                    sendAdminReply();
+                }
+                else if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    this.value = this.value.substring(0, start) + "\n" + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1;
+                }
+            });
+        });
+
+        setInterval(() => {
+            loadChatList();
+            if (currentSelectedChat) loadActiveChat();
+            loadRatings();
+        }, 3000);
+
+        loadChatList();
+        loadBotSettings();
+        loadRatings();
+    </script>
+</body>
+</html>
