@@ -400,6 +400,16 @@
     <span id="chat-notification-badge" style="display: none;">1</span>
   </div>
 
+  <!-- HOKI168 Live Chat Widget -->
+<div id="hoki168-chat-widget">
+  <!-- Floating Chat Button -->
+  <div id="chat-widget-button" onclick="toggleHokiChat()">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="#000">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+    </svg>
+    <span id="chat-notification-badge" style="display: none;">1</span>
+  </div>
+
   <!-- Chat Iframe Container -->
   <div id="chat-widget-container" style="display: none;">
     <iframe 
@@ -519,6 +529,10 @@
 </style>
 
 <script>
+let currentChatId = null;
+let currentChatUser = null;
+
+// Toggle Chat
 function toggleHokiChat() {
   var container = document.getElementById('chat-widget-container');
   var badge = document.getElementById('chat-notification-badge');
@@ -526,11 +540,18 @@ function toggleHokiChat() {
   if (container.style.display === 'none' || container.style.display === '') {
     container.style.display = 'block';
     if (badge) badge.style.display = 'none';
+    
+    // Notify iframe
+    var iframe = document.getElementById('hoki168-chat-iframe');
+    if (iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ action: 'chatOpened' }, '*');
+    }
   } else {
     container.style.display = 'none';
   }
 }
 
+// Close chat when clicking outside
 document.addEventListener('click', function(event) {
   var widget = document.getElementById('hoki168-chat-widget');
   var container = document.getElementById('chat-widget-container');
@@ -539,11 +560,57 @@ document.addEventListener('click', function(event) {
     container.style.display = 'none';
   }
 });
+
+// Listen for messages from iframe
+window.addEventListener('message', function(event) {
+  // Accept messages from Netlify domain
+  if (event.origin.includes('netlify.app') || event.origin.includes('localhost')) {
+    console.log('Received message:', event.data);
+    
+    if (event.data.action === 'chatStarted') {
+      currentChatId = event.data.chatId;
+      currentChatUser = event.data.user;
+      console.log('Chat started:', currentChatId, currentChatUser);
+    }
+    
+    if (event.data.action === 'newUserMessage') {
+      // Show notification badge
+      var badge = document.getElementById('chat-notification-badge');
+      if (badge && document.getElementById('chat-widget-container').style.display === 'none') {
+        badge.style.display = 'flex';
+        var count = parseInt(badge.textContent) || 0;
+        badge.textContent = count + 1;
+      }
+    }
+    
+    if (event.data.action === 'chatEnded') {
+      currentChatId = null;
+      currentChatUser = null;
+    }
+  }
+});
+
+// Function to send message to chat (bisa dipanggil dari console atau script lain)
+function sendMessageToChat(message) {
+  if (!currentChatId) {
+    alert('Chat belum dimulai. Silakan buka chat widget terlebih dahulu.');
+    return;
+  }
+  
+  var iframe = document.getElementById('hoki168-chat-iframe');
+  if (iframe.contentWindow) {
+    iframe.contentWindow.postMessage({
+      action: 'newMessageFromParent',
+      chatId: currentChatId,
+      message: message
+    }, '*');
+  }
+}
 </script>
 <!-- End HOKI168 Live Chat Widget -->
-    
 </body>
 
 
 </html>
+
 
